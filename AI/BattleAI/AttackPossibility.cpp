@@ -10,53 +10,90 @@
 #include "StdInc.h"
 #include "AttackPossibility.h"
 
-int AttackPossibility::damageDiff() const
+AttackPossibility::AttackPossibility(BattleHex tile_, const BattleAttackInfo & attack_)
+	: tile(tile_),
+	attack(attack_)
 {
-	if (!priorities)
-		priorities = new Priorities();
-	const auto dealtDmgValue = priorities->stackEvaluator(enemy) * damageDealt;
-	const auto receivedDmgValue = priorities->stackEvaluator(attack.attacker) * damageReceived;
-	return dealtDmgValue - receivedDmgValue;
 }
 
-int AttackPossibility::attackValue() const
+
+int64_t AttackPossibility::damageDiff() const
+{
+	//TODO: use target priority from HypotheticBattle
+	const auto dealtDmgValue = damageDealt;
+	const auto receivedDmgValue = damageReceived;
+
+	int64_t diff = 0;
+
+	//friendly fire or not
+	if(attack.attacker->unitSide() == attack.defender->unitSide())
+		diff = -dealtDmgValue - receivedDmgValue;
+	else
+		diff = dealtDmgValue - receivedDmgValue;
+
+	//mind control
+	auto actualSide = getCbc()->playerToSide(getCbc()->battleGetOwner(attack.attacker));
+	if(actualSide && actualSide.get() != attack.attacker->unitSide())
+		diff = -diff;
+	return diff;
+}
+
+int64_t AttackPossibility::attackValue() const
 {
 	return damageDiff() + tacticImpact;
 }
 
-AttackPossibility AttackPossibility::evaluate(const BattleAttackInfo &AttackInfo, const HypotheticChangesToBattleState &state, BattleHex hex)
+AttackPossibility AttackPossibility::evaluate(const BattleAttackInfo & AttackInfo, BattleHex hex)
 {
-	auto attacker = AttackInfo.attacker;
-	auto enemy = AttackInfo.defender;
+	static const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
+	static const auto selectorBlocksRetaliation = Selector::type(Bonus::BLOCKS_RETALIATION);
 
-	const int remainingCounterAttacks = getValOr(state.counterAttacksLeft, enemy, enemy->counterAttacks.available());
-	const bool counterAttacksBlocked = attacker->hasBonusOfType(Bonus::BLOCKS_RETALIATION) || enemy->hasBonusOfType(Bonus::NO_RETALIATION);
-	const int totalAttacks = 1 + AttackInfo.attackerBonuses->getBonuses(Selector::type(Bonus::ADDITIONAL_ATTACK), (Selector::effectRange (Bonus::NO_LIMIT).Or(Selector::effectRange(Bonus::ONLY_MELEE_FIGHT))))->totalValue();
+	const bool counterAttacksBlocked = AttackInfo.attacker->hasBonus(selectorBlocksRetaliation, cachingStringBlocksRetaliation);
 
-	AttackPossibility ap = {enemy, hex, AttackInfo, 0, 0, 0};
+	AttackPossibility ap(hex, AttackInfo);
 
-	auto curBai = AttackInfo; //we'll modify here the stack counts
-	for(int i  = 0; i < totalAttacks; i++)
+	ap.attackerState = AttackInfo.attacker->asquire();
+
+	const int totalAttacks = AttackInfo.shooting ? ap.attackerState->totalAttacks.getRangedValue() : ap.attackerState->totalAttacks.getMeleeValue();
+
+	if(!AttackInfo.shooting)
+		ap.attackerState->position = hex;
+
+	auto defenderState = AttackInfo.defender->asquire();
+	ap.affectedUnits.push_back(defenderState);
+
+	for(int i = 0; i < totalAttacks; i++)
 	{
-		std::pair<ui32, ui32> retaliation(0,0);
-		auto attackDmg = getCbc()->battleEstimateDamage(CRandomGenerator::getDefault(), curBai, &retaliation);
-		ap.damageDealt = (attackDmg.first + attackDmg.second) / 2;
-		ap.damageReceived = (retaliation.first + retaliation.second) / 2;
+		TDmgRange retaliation(0,0);
+		auto attackDmg = getCbc()->battleEstimateDamage(ap.attack, &retaliation);
 
-		if(remainingCounterAttacks <= i || counterAttacksBlocked)
-			ap.damageReceived = 0;
+		vstd::amin(attackDmg.first, defenderState->health.available());
+		vstd::amin(attackDmg.second, defenderState->health.available());
 
-		curBai.attackerHealth = attacker->healthAfterAttacked(ap.damageReceived);
-		curBai.defenderHealth = enemy->healthAfterAttacked(ap.damageDealt);
-		if(curBai.attackerHealth.getCount() <= 0)
+		vstd::amin(retaliation.first, ap.attackerState->health.available());
+		vstd::amin(retaliation.second, ap.attackerState->health.available());
+
+		ap.damageDealt += (attackDmg.first + attackDmg.second) / 2;
+
+		ap.attackerState->afterAttack(AttackInfo.shooting, false);
+
+		//FIXME: use ranged retaliation
+		if(!AttackInfo.shooting && defenderState->ableToRetaliate() && !counterAttacksBlocked)
+		{
+			ap.damageReceived += (retaliation.first + retaliation.second) / 2;
+			defenderState->afterAttack(AttackInfo.shooting, true);
+		}
+
+		ap.attackerState->damage(ap.damageReceived);
+		defenderState->damage(ap.damageDealt);
+
+		if(!ap.attackerState->alive())
 			break;
-		//TODO what about defender? should we break? but in pessimistic scenario defender might be alive
+		if(!defenderState->alive())
+			break;
 	}
 
 	//TODO other damage related to attack (eg. fire shield and other abilities)
 
 	return ap;
 }
-
-
-Priorities* AttackPossibility::priorities = nullptr;

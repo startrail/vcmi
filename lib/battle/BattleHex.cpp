@@ -9,7 +9,6 @@
  */
 #include "StdInc.h"
 #include "BattleHex.h"
-#include "../GameConstants.h"
 
 BattleHex::BattleHex() : hex(INVALID) {}
 
@@ -129,6 +128,7 @@ BattleHex BattleHex::operator+(BattleHex::EDir dir) const
 std::vector<BattleHex> BattleHex::neighbouringTiles() const
 {
 	std::vector<BattleHex> ret;
+	ret.reserve(6);
 	for(EDir dir = EDir(0); dir <= EDir(5); dir = EDir(dir+1))
 		checkAndPush(cloneInDirection(dir, false), ret);
 	return ret;
@@ -201,3 +201,21 @@ std::ostream & operator<<(std::ostream & os, const BattleHex & hex)
 {
 	return os << boost::str(boost::format("{BattleHex: x '%d', y '%d', hex '%d'}") % hex.getX() % hex.getY() % hex.hex);
 }
+
+static BattleHex::NeighbouringTilesCache calculateNeighbouringTiles()
+{
+	BattleHex::NeighbouringTilesCache ret;
+
+	for(si16 hex = 0; hex <  GameConstants::BFIELD_SIZE; hex++)
+	{
+		auto hexes = BattleHex(hex).neighbouringTiles();
+
+		size_t index = 0;
+		for(auto neighbour : hexes)
+			ret[hex].at(index++) = neighbour;
+	}
+
+	return ret;
+}
+
+const BattleHex::NeighbouringTilesCache BattleHex::neighbouringTilesCache = calculateNeighbouringTiles();

@@ -232,14 +232,14 @@ void CStackWindow::CWindowSection::createStackInfo(bool showExp, bool showArt)
 	{
 		printStatBase(EStat::ATTACK, CGI->generaltexth->primarySkillNames[0], parent->info->creature->Attack(), battleStack->Attack());
 		printStatBase(EStat::DEFENCE, CGI->generaltexth->primarySkillNames[1], parent->info->creature->Defense(false), battleStack->Defense());
-		printStatRange(EStat::DAMAGE, CGI->generaltexth->allTexts[199], parent->info->stackNode->getMinDamage() * dmgMultiply, battleStack->getMaxDamage() * dmgMultiply);
+		printStatRange(EStat::DAMAGE, CGI->generaltexth->allTexts[199], parent->info->stackNode->getMinDamage(battleStack->isShooter()) * dmgMultiply, battleStack->getMaxDamage(battleStack->isShooter()) * dmgMultiply);
 		printStatBase(EStat::HEALTH, CGI->generaltexth->allTexts[388], parent->info->creature->MaxHealth(), battleStack->MaxHealth());
 		printStatBase(EStat::SPEED, CGI->generaltexth->zelp[441].first, parent->info->creature->Speed(), battleStack->Speed());
 
 		if(battleStack->isShooter())
-			printStatBase(EStat::SHOTS, CGI->generaltexth->allTexts[198], battleStack->shots.total(), battleStack->shots.available());
+			printStatBase(EStat::SHOTS, CGI->generaltexth->allTexts[198], battleStack->stackState.shots.total(), battleStack->stackState.shots.available());
 		if(battleStack->isCaster())
-			printStatBase(EStat::MANA, CGI->generaltexth->allTexts[399], battleStack->casts.total(), battleStack->casts.available());
+			printStatBase(EStat::MANA, CGI->generaltexth->allTexts[399], battleStack->stackState.casts.total(), battleStack->stackState.casts.available());
 		printStat(EStat::HEALTH_LEFT, CGI->generaltexth->allTexts[200], battleStack->getFirstHPleft());
 
 		morale->set(battleStack);
@@ -252,7 +252,7 @@ void CStackWindow::CWindowSection::createStackInfo(bool showExp, bool showArt)
 
 		printStatBase(EStat::ATTACK, CGI->generaltexth->primarySkillNames[0], parent->info->creature->Attack(), parent->info->stackNode->Attack());
 		printStatBase(EStat::DEFENCE, CGI->generaltexth->primarySkillNames[1], parent->info->creature->Defense(false), parent->info->stackNode->Defense());
-		printStatRange(EStat::DAMAGE, CGI->generaltexth->allTexts[199], parent->info->stackNode->getMinDamage() * dmgMultiply, parent->info->stackNode->getMaxDamage() * dmgMultiply);
+		printStatRange(EStat::DAMAGE, CGI->generaltexth->allTexts[199], parent->info->stackNode->getMinDamage(shooter) * dmgMultiply, parent->info->stackNode->getMaxDamage(shooter) * dmgMultiply);
 		printStatBase(EStat::HEALTH, CGI->generaltexth->allTexts[388], parent->info->creature->MaxHealth(), parent->info->stackNode->MaxHealth());
 		printStatBase(EStat::SPEED, CGI->generaltexth->zelp[441].first, parent->info->creature->Speed(), parent->info->stackNode->Speed());
 

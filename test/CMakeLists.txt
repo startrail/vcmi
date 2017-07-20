@@ -16,20 +16,35 @@ set(test_SRCS
  		main.cpp
  		CMemoryBufferTest.cpp
  		CVcmiTestConfig.cpp
- 
+
  		battle/BattleHexTest.cpp
  		battle/CHealthTest.cpp
+		battle/CUnitStateTest.cpp
+
+ 		game/CGameStateTest.cpp
 
  		map/CMapEditManagerTest.cpp
  		map/CMapFormatTest.cpp
  		map/MapComparer.cpp
+
+ 		mock/mock_IGameCallback.cpp
+ 		mock/mock_MapService.cpp
+ 		mock/mock_BonusBearer.cpp
 )
 
 set(test_HEADERS
  		StdInc.h
- 
+
  		CVcmiTestConfig.h
  		map/MapComparer.h
+
+		mock/mock_BonusBearer.h
+ 		mock/mock_IGameCallback.h
+ 		mock/mock_MapService.h
+		mock/mock_BonusBearer.h
+		mock/mock_UnitEnvironment.h
+		mock/mock_UnitHealthInfo.h
+		mock/mock_UnitInfo.h
 )
 
 assign_source_group(${test_SRCS} ${test_HEADERS})
@@ -64,3 +79,4 @@ foreach(file ${vcmitest_FILES})
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/${file}" ${CMAKE_CURRENT_BINARY_DIR}
 	)
 endforeach()
+
