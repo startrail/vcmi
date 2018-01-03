@@ -82,7 +82,7 @@
 					"damage":{
 						"type":"core:damage",
 						"optional":false,
-						"automatic":false,
+						"indirect":true,
 						"customEffectId" : 82
 					}
 				}
@@ -224,7 +224,7 @@
 					"damage":{
 						"type":"core:damage",
 						"optional":false,
-						"automatic":false
+						"indirect":true
 					}
 				}
 			},
@@ -395,7 +395,7 @@
 					},
 					"cure":{
 						"type":"core:dispel",
-						"automatic": false,
+						"indirect": true,
 						"optional":true,
 						"dispelNegative":true,
 						"dispelNeutral":false,

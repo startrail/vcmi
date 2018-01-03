@@ -64,7 +64,7 @@ private:
 class Effect
 {
 public:
-	bool automatic;
+	bool indirect;
 	bool optional;
 
 	std::string name;

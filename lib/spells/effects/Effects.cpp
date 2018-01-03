@@ -62,7 +62,7 @@ bool Effects::applicable(Problem & problem, const Mechanics * m) const
 bool Effects::applicable(Problem & problem, const Mechanics * m, const Target & aimPoint, const Target & spellTarget) const
 {
 	//stop on first problem
-	//require all automatic and not optional effects to be applicable at this aimPoint
+	//require all direct and not optional effects to be applicable at this aimPoint
 	//f.e. FireWall do not need damage target here, only a place to put obstacle
 
 	bool requiredEffectNotBlocked = true;
@@ -70,7 +70,7 @@ bool Effects::applicable(Problem & problem, const Mechanics * m, const Target & 
 
 	auto callback = [&](const Effect * e, bool & stop)
 	{
-		if(!e->automatic)
+		if(e->indirect)
 			return;
 
 		EffectTarget target = e->transformTarget(m, aimPoint, spellTarget);
@@ -115,7 +115,7 @@ Effects::EffectsToApply Effects::prepare(const Mechanics * m, const Target & aim
 		if(m->getSpellIndex() == SpellID::RESURRECTION && e->name == "cure")
 			applyThis = m->mode == Mode::CREATURE_ACTIVE;
 		else
-			applyThis = e->automatic;
+			applyThis = !e->indirect;
 
 		if(applyThis)
 		{

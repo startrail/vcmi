@@ -136,8 +136,11 @@ void BattleSpellMechanics::applyEffects(const SpellCastEnvironment * env, const 
 {
 	auto callback = [&](const effects::Effect * e, bool & stop)
 	{
-		EffectTarget target = e->filterTarget(this, targets);
-		e->apply(env, env->getRandomGenerator(), this, target);
+		if(!e->indirect)
+		{
+			EffectTarget target = e->filterTarget(this, targets);
+			e->apply(env, env->getRandomGenerator(), this, target);
+		}
 	};
 
 	effects->forEachEffect(getEffectLevel(), callback);
@@ -147,7 +150,7 @@ void BattleSpellMechanics::applyIndirectEffects(const SpellCastEnvironment * env
 {
 	auto callback = [&](const effects::Effect * e, bool & stop)
 	{
-		if(!e->automatic)
+		if(e->indirect)
 		{
 			EffectTarget target = e->filterTarget(this, targets);
 			e->apply(env, env->getRandomGenerator(), this, target);
@@ -161,7 +164,10 @@ void BattleSpellMechanics::applyEffectsForced(const SpellCastEnvironment * env, 
 {
 	auto callback = [&](const effects::Effect * e, bool & stop)
 	{
-		e->apply(env, env->getRandomGenerator(), this, targets);
+		if(!e->indirect)
+		{
+			e->apply(env, env->getRandomGenerator(), this, targets);
+		}
 	};
 
 	effects->forEachEffect(getEffectLevel(), callback);
@@ -627,7 +633,7 @@ std::vector<BattleHex> BattleSpellMechanics::rangeInHexes(BattleHex centralHex, 
 
 	effects->forEachEffect(getEffectLevel(), [&](const effects::Effect * effect, bool & stop)
 	{
-		if(effect->automatic)
+		if(!effect->indirect)
 		{
 			effect->adjustAffectedHexes(effectRange, this, spellTarget);
 		}

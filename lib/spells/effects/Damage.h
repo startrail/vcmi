@@ -19,7 +19,6 @@ namespace spells
 namespace effects
 {
 
-///Direct (if automatic) or indirect damage
 class Damage : public UnitEffect
 {
 public:

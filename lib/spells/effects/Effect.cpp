@@ -42,7 +42,7 @@ void BattleStateProxy::complain(const std::string & problem) const
 
 
 Effect::Effect(const int level)
-	: automatic(true),
+	: indirect(false),
 	optional(false),
 	spellLevel(level)
 {
@@ -75,7 +75,7 @@ void Effect::apply(IBattleState * battleState, RNG & rng, const Mechanics * m, c
 
 void Effect::serializeJson(JsonSerializeFormat & handler)
 {
-	handler.serializeBool("automatic", automatic, true);
+	handler.serializeBool("indirect", indirect, false);
 	handler.serializeBool("optional", optional, false);
 	serializeJsonEffect(handler);
 }
