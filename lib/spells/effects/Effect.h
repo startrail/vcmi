@@ -12,7 +12,7 @@
 
 #include "../Magic.h"
 
-class BattleHex;
+struct BattleHex;
 class CBattleInfoCallback;
 class JsonSerializeFormat;
 class IBattleState;

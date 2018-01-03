@@ -15,7 +15,7 @@
 #include "IUnitInfo.h"
 #include "BattleHex.h"
 
-class MetaString;
+struct MetaString;
 class UnitChanges;
 class JsonSerializeFormat;
 

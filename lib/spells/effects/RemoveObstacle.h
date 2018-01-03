@@ -14,7 +14,7 @@
 
 #include "../../GameConstants.h"
 
-class CObstacleInstance;
+struct CObstacleInstance;
 struct BattleObstaclesChanged;
 
 namespace spells
