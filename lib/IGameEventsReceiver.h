@@ -70,7 +70,6 @@ public:
 	virtual void battleUnitsChanged(const std::vector<UnitChanges> & units, const std::vector<CustomEffectInfo> & customEffects, const std::vector<MetaString> & battleLog){};
 	virtual void battleObstaclesChanged(const std::vector<ObstacleChanges> & obstacles){};
 	virtual void battleCatapultAttacked(const CatapultAttack & ca){}; //called when catapult makes an attack
-	virtual void battleObstaclePlaced(const CObstacleInstance &obstacle){};
 	virtual void battleGateStateChanged(const EGateState state){};
 };
 

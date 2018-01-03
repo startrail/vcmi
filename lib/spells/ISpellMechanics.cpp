@@ -424,25 +424,10 @@ ISpellMechanicsFactory::~ISpellMechanicsFactory()
 
 std::unique_ptr<ISpellMechanicsFactory> ISpellMechanicsFactory::get(const CSpell * s)
 {
-	//ignore spell id if there are special effects
 	if(s->hasBattleEffects())
 		return make_unique<ConfigurableMechanicsFactory>(s);
-
-	//to be converted
-	switch(s->id)
-	{
-
-	case SpellID::FIRE_WALL:
-		return make_unique<SpellMechanicsFactory<FireWallMechanics>>(s);
-	case SpellID::FORCE_FIELD:
-		return make_unique<SpellMechanicsFactory<ForceFieldMechanics>>(s);
-	case SpellID::LAND_MINE:
-		return make_unique<SpellMechanicsFactory<LandMineMechanics>>(s);
-	case SpellID::QUICKSAND:
-		return make_unique<SpellMechanicsFactory<QuicksandMechanics>>(s);
-	default:
+	else
 		return make_unique<FallbackMechanicsFactory>(s);
-	}
 }
 
 ///Mechanics

@@ -29,6 +29,8 @@ public:
 	std::string appearAnimation;
 	std::string animation;
 
+	int offsetY;
+
 	ObstacleSideOptions();
 
 	void serializeJson(JsonSerializeFormat & handler);

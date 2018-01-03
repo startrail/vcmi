@@ -769,6 +769,8 @@ void CPlayerInterface::battleObstaclesChanged(const std::vector<ObstacleChanges>
 			auto instance = cb->battleGetObstacleByID(change.id);
 			if(instance)
 				battleInt->obstaclePlaced(*instance);
+			else
+				logNetwork->error("Invalid obstacle instance %d", change.id);
 		}
 		else
 		{
@@ -1056,13 +1058,6 @@ void CPlayerInterface::battleAttack(const BattleAttack * ba)
 		SpellID spellID = ba->spellID;
 		battleInt->displaySpellHit(spellID, destination);
 	}
-}
-void CPlayerInterface::battleObstaclePlaced(const CObstacleInstance &obstacle)
-{
-	EVENT_HANDLER_CALLED_BY_CLIENT;
-	BATTLE_EVENT_POSSIBLE_RETURN;
-
-	battleInt->obstaclePlaced(obstacle);
 }
 
 void CPlayerInterface::battleGateStateChanged(const EGateState state)

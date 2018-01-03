@@ -218,7 +218,6 @@ public:
 	void battleUnitsChanged(const std::vector<UnitChanges> & units, const std::vector<CustomEffectInfo> & customEffects, const std::vector<MetaString> & battleLog) override;
 	void battleObstaclesChanged(const std::vector<ObstacleChanges> & obstacles) override;
 	void battleCatapultAttacked(const CatapultAttack & ca) override; //called when catapult makes an attack
-	void battleObstaclePlaced(const CObstacleInstance &obstacle) override;
 	void battleGateStateChanged(const EGateState state) override;
 	void yourTacticPhase(int distance) override;
 

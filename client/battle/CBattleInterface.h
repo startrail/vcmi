@@ -19,7 +19,6 @@
 class CLabel;
 class CCreatureSet;
 class CGHeroInstance;
-class CDefHandler;
 class CStack;
 class CCallback;
 class CButton;
@@ -49,6 +48,7 @@ struct InfoAboutHero;
 class CBattleGameInterface;
 struct CustomEffectInfo;
 class CAnimation;
+class IImage;
 
 /// Small struct which contains information about the id of the attacked stack, the damage dealt,...
 struct StackAttackedInfo
@@ -132,15 +132,8 @@ private:
 
 	std::map<int, std::shared_ptr<CAnimation>> idToProjectile;
 
-	std::map<int, CDefHandler *> idToObstacle; //obstacles located on the battlefield
-	std::map<int, SDL_Surface *> idToAbsoluteObstacle; //obstacles located on the battlefield
-
-	//TODO these should be loaded only when needed (and freed then) but I believe it's rather work for resource manager,
-	//so I didn't implement that (having ongoing RM development)
-	CDefHandler *landMine;
-	CDefHandler *quicksand;
-	CDefHandler *fireWall;
-	CDefHandler *smallForceField[2], *bigForceField[2]; // [side]
+	std::map<std::string, std::shared_ptr<CAnimation>> animationsCache;
+	std::map<si32, std::shared_ptr<CAnimation>> obstacleAnimations;
 
 	std::map<int, bool> creDir; // <creatureID, if false reverse creature's animation> //TODO: move it to battle callback
 	ui8 animCount;
@@ -261,8 +254,10 @@ private:
 	BattleObjectsByHex sortObjectsByHex();
 	void updateBattleAnimations();
 
-	SDL_Surface *getObstacleImage(const CObstacleInstance &oi);
-	Point getObstaclePosition(SDL_Surface *image, const CObstacleInstance &obstacle);
+	IImage * getObstacleImage(const CObstacleInstance & oi);
+
+	Point getObstaclePosition(IImage * image, const CObstacleInstance & obstacle);
+
 	void redrawBackgroundWithHexes(const CStack *activeStack);
 	/** End of battle screen blitting methods */
 

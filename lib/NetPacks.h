@@ -1772,21 +1772,6 @@ struct BattleTriggerEffect : public CPackForClient
 	}
 };
 
-struct BattleObstaclePlaced : public CPackForClient
-{
-	BattleObstaclePlaced(){};
-
-	DLL_LINKAGE void applyGs(CGameState *gs); //effect
-	void applyCl(CClient *cl); //play animations & stuff
-
-	std::shared_ptr<CObstacleInstance> obstacle;
-
-	template <typename Handler> void serialize(Handler &h, const int version)
-	{
-		h & obstacle;
-	}
-};
-
 struct BattleUpdateGateState : public CPackForClient
 {
 	BattleUpdateGateState():state(EGateState::NONE){};

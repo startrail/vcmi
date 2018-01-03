@@ -1046,7 +1046,6 @@ void CCastAnimation::endAnim()
 CEffectAnimation::CEffectAnimation(CBattleInterface * _owner, std::string _customAnim, int _x, int _y, int _dx, int _dy, bool _Vflip, bool _alignToBottom)
 	: CBattleAnimation(_owner),
 	destTile(BattleHex::INVALID),
-	customAnim(_customAnim),
 	x(_x),
 	y(_y),
 	dx(_dx),
@@ -1054,13 +1053,29 @@ CEffectAnimation::CEffectAnimation(CBattleInterface * _owner, std::string _custo
 	Vflip(_Vflip),
 	alignToBottom(_alignToBottom)
 {
-	logAnim->debug("Created effect animation %s", customAnim);
+	logAnim->debug("Created effect animation %s", _customAnim);
+
+	customAnim = std::make_shared<CAnimation>(_customAnim);
 }
+
+CEffectAnimation::CEffectAnimation(CBattleInterface * _owner, std::shared_ptr<CAnimation> _customAnim, int _x, int _y, int _dx, int _dy)
+	: CBattleAnimation(_owner),
+	destTile(BattleHex::INVALID),
+	customAnim(_customAnim),
+	x(_x),
+	y(_y),
+	dx(_dx),
+	dy(_dy),
+	Vflip(false),
+	alignToBottom(false)
+{
+	logAnim->debug("Created custom effect animation");
+}
+
 
 CEffectAnimation::CEffectAnimation(CBattleInterface * _owner, std::string _customAnim, BattleHex _destTile, bool _Vflip, bool _alignToBottom)
 	: CBattleAnimation(_owner),
 	destTile(_destTile),
-	customAnim(_customAnim),
 	x(-1),
 	y(-1),
 	dx(0),
@@ -1068,24 +1083,18 @@ CEffectAnimation::CEffectAnimation(CBattleInterface * _owner, std::string _custo
 	Vflip(_Vflip),
 	alignToBottom(_alignToBottom)
 {
-	logAnim->debug("Created effect animation %s", customAnim);
+	logAnim->debug("Created effect animation %s", _customAnim);
+	customAnim = std::make_shared<CAnimation>(_customAnim);
 }
-
 
 bool CEffectAnimation::init()
 {
 	if(!isEarliest(true))
 		return false;
 
-	if(customAnim.empty())
-	{
-		endAnim();
-		return false;
-	}
-
 	const bool areaEffect = (!destTile.isValid() && x == -1 && y == -1);
 
-	std::shared_ptr<CAnimation> animation = std::make_shared<CAnimation>(customAnim);
+	std::shared_ptr<CAnimation> animation = customAnim;
 
 	animation->preload();
 	if(Vflip)

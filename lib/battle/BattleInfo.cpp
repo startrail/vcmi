@@ -814,7 +814,7 @@ void BattleInfo::moveUnit(uint32_t id, BattleHex destination)
 	//if unit ended movement on quicksands that were created by enemy, that quicksand patch becomes visible for owner
 	for(auto & oi : obstacles)
 	{
-		if(oi->obstacleType == CObstacleInstance::QUICKSAND && vstd::contains(oi->getAffectedTiles(), destination))
+		if((oi->obstacleType == CObstacleInstance::SPELL_CREATED) && vstd::contains(oi->getAffectedTiles(), destination))
 		{
 			SpellCreatedObstacle * sands = dynamic_cast<SpellCreatedObstacle*>(oi.get());
 			assert(sands);

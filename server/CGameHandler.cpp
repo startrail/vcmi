@@ -4836,11 +4836,9 @@ bool CGameHandler::handleDamageFromObstacle(const CStack * curStack, bool stackI
 
 			const bool oneTimeObstacle = spellObstacle->removeOnTrigger;
 
-			if(spellObstacle->hidden)
-			{
-				if(gs->curB->battleIsObstacleVisibleForSide(*obstacle, (BattlePerspective::BattlePerspective)side))
-					continue;
-			}
+			//only hidden obstacle triggers effects
+			if(gs->curB->battleIsObstacleVisibleForSide(*obstacle, (BattlePerspective::BattlePerspective)side))
+				continue;
 
 			const CGHeroInstance * hero = gs->curB->battleGetFightingHero(spellObstacle->casterSide);
 			spells::ObstacleCasterProxy caster(this, gs->curB->sides.at(spellObstacle->casterSide).color, hero, spellObstacle);
@@ -4874,35 +4872,6 @@ bool CGameHandler::handleDamageFromObstacle(const CStack * curStack, bool stackI
 			StacksInjured si;
 			si.stacks.push_back(bsa);
 			sendAndApply(&si);
-		}
-		else if(obstacle->obstacleType == CObstacleInstance::LAND_MINE || obstacle->obstacleType == CObstacleInstance::FIRE_WALL)
-		{
-			if(!spellObstacle)
-				COMPLAIN_RET("Invalid obstacle instance");
-			bool oneTimeObstacle = false;
-
-			const CGHeroInstance * hero = gs->curB->battleGetFightingHero(spellObstacle->casterSide);
-			spells::ObstacleCasterProxy caster(this, gs->curB->sides.at(spellObstacle->casterSide).color, hero, spellObstacle);
-
-			if(obstacle->obstacleType == CObstacleInstance::LAND_MINE)
-			{
-				//You don't get hit by a Mine you can see.
-				if(gs->curB->battleIsObstacleVisibleForSide(*obstacle, (BattlePerspective::BattlePerspective)side))
-					continue;
-
-				oneTimeObstacle = true;
-			}
-
-			const CSpell * sp = SpellID(spellObstacle->ID).toSpell();
-			if(!sp)
-				COMPLAIN_RET("Invalid obstacle instance");
-
-			spells::BattleCast battleCast(gs->curB, &caster, spells::Mode::HERO, sp);
-			battleCast.aimToUnit(curStack);
-			battleCast.applyEffects(spellEnv);
-
-			if(oneTimeObstacle)
-				removeObstacle(*obstacle);
 		}
 		else
 			continue;

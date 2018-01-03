@@ -75,19 +75,30 @@ bool CObstacleInstance::visibleForSide(ui8 side, bool hasNativeStack) const
 	return true;
 }
 
+int CObstacleInstance::getAnimationYOffset(int imageHeight) const
+{
+	int offset = imageHeight % 42;
+	if(obstacleType == CObstacleInstance::USUAL)
+	{
+		if(getInfo().blockedTiles.front() < 0 || offset > 37) //second or part is for holy ground ID=62,65,63
+			offset -= 42;
+	}
+	return offset;
+}
+
 bool CObstacleInstance::stopsMovement() const
 {
-	return obstacleType == QUICKSAND || obstacleType == MOAT;
+	return obstacleType == MOAT;
 }
 
 bool CObstacleInstance::blocksTiles() const
 {
-	return obstacleType == USUAL || obstacleType == ABSOLUTE_OBSTACLE || obstacleType == FORCE_FIELD;
+	return obstacleType == USUAL || obstacleType == ABSOLUTE_OBSTACLE ;
 }
 
 bool CObstacleInstance::triggersEffects() const
 {
-	return obstacleType == FIRE_WALL || obstacleType == LAND_MINE;
+	return false;
 }
 
 SpellCreatedObstacle::SpellCreatedObstacle()
@@ -100,6 +111,7 @@ SpellCreatedObstacle::SpellCreatedObstacle()
 	passable = false;
 	trigger = false;
 	trap = false;
+	animationYOffset = 0;
 }
 
 bool SpellCreatedObstacle::visibleForSide(ui8 side, bool hasNativeStack) const
@@ -160,6 +172,7 @@ void SpellCreatedObstacle::fromInfo(const ObstacleChanges & info)
 void SpellCreatedObstacle::serializeJson(JsonSerializeFormat & handler)
 {
 	handler.serializeInt("spell", ID);
+	handler.serializeInt("position", pos);
 
 	handler.serializeInt("turnsRemaining", turnsRemaining);
 	handler.serializeInt("casterSpellPower", casterSpellPower);
@@ -174,6 +187,8 @@ void SpellCreatedObstacle::serializeJson(JsonSerializeFormat & handler)
 
 	handler.serializeString("appearAnimation", appearAnimation);
 	handler.serializeString("animation", animation);
+
+	handler.serializeInt("animationYOffset", animationYOffset);
 
 	{
 		JsonArraySerializer customSizeJson = handler.enterArray("customSize");
@@ -193,6 +208,18 @@ void SpellCreatedObstacle::battleTurnPassed()
 {
 	if(turnsRemaining > 0)
 		turnsRemaining--;
+}
+
+int SpellCreatedObstacle::getAnimationYOffset(int imageHeight) const
+{
+	int offset = imageHeight % 42;
+
+	if(obstacleType == CObstacleInstance::SPELL_CREATED)
+	{
+		offset += animationYOffset;
+	}
+
+	return offset;
 }
 
 std::vector<BattleHex> MoatObstacle::getAffectedTiles() const

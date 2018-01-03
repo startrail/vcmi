@@ -8,7 +8,42 @@
 		},
 		"levels" : {
 			"base":{
-				"range" : "X"
+				"range" : "X",
+				"battleEffects" : {
+					"obstacle" : {
+						"type":"core:obstacle",
+						"hidden" : true,
+						"passable" : true,
+						"trap" : true,
+						"trigger" : false,
+						"patchCount" : 4,
+						"turnsRemaining" : -1,
+						"attacker" :{
+							"animation" : "C17SPE1",
+							"appearAnimation" : "C17SPE0",
+							"offsetY" : -42
+						},
+						"defender" :{
+							"animation" : "C17SPE1",
+							"appearAnimation" : "C17SPE0",
+							"offsetY" : -42
+						}
+					}
+				}
+			},
+			"advanced":{
+				"battleEffects":{
+					"obstacle":{
+						"patchCount" : 6
+					}
+				}
+			},
+			"expert":{
+				"battleEffects":{
+					"obstacle":{
+						"patchCount" : 8
+					}
+				}
 			}
 		},
 		"flags" : {
@@ -24,7 +59,47 @@
 		},
 		"levels" : {
 			"base":{
-				"range" : "X"
+				"range" : "X",
+				"battleEffects" : {
+					"obstacle" : {
+						"type":"core:obstacle",
+						"hidden" : true,
+						"passable" : true,
+						"trap" : false,
+						"trigger" : true,
+						"removeOnTrigger" : true,
+						"patchCount" : 4,
+						"turnsRemaining" : -1,
+						"attacker" :{
+							"animation" : "C09SPF1",
+							"appearAnimation" : "C09SPF0"
+						},
+						"defender" :{
+							"animation" : "C09SPF1",
+							"appearAnimation" : "C09SPF0"
+						}
+					},
+					"damage":{
+						"type":"core:damage",
+						"optional":false,
+						"automatic":false,
+						"customEffectId" : 82
+					}
+				}
+			},
+			"advanced":{
+				"battleEffects":{
+					"obstacle":{
+						"patchCount" : 6
+					}
+				}
+			},
+			"expert":{
+				"battleEffects":{
+					"obstacle":{
+						"patchCount" : 8
+					}
+				}
 			}
 		},
 		"flags" : {
@@ -49,6 +124,61 @@
 				"range" : "0",
 				"targetModifier":{
 					"clearAffected": true
+				},
+				"battleEffects":{
+					"obstacle":{
+						"type":"core:obstacle",
+						"hidden" : false,
+						"passable" : false,
+						"trap" : false,
+						"trigger" : false,
+						"patchCount" : 1,
+						"turnsRemaining" : 2,
+						"attacker" :{
+							"range" : [[""]],
+							"shape" : [[""], ["TR"]],
+							"animation" : "C15SPE1",
+							"appearAnimation" : "C15SPE0"
+						},
+						"defender" :{
+							"range" : [[""]],
+							"shape" : [[""], ["TL"]],
+							"animation" : "C15SPE4",
+							"appearAnimation" : "C15SPE0"
+						}
+					}
+				}
+			},
+			"advanced":{
+				"battleEffects":{
+					"obstacle":{
+						"attacker" :{
+							"shape" : [[""], ["TR"], ["TR", "TL"]],
+							"animation" : "C15SPE10",
+							"appearAnimation" : "C15SPE9"
+						},
+						"defender" :{
+							"shape" : [[""], ["TL"], ["TL", "TR"]],
+							"animation" : "C15SPE7",
+							"appearAnimation" : "C15SPE6"
+						}
+					}
+				}
+			},
+			"expert":{
+				"battleEffects":{
+					"obstacle":{
+						"attacker" :{
+							"shape" : [[""], ["TR"], ["TR", "TL"]],
+							"animation" : "C15SPE10",
+							"appearAnimation" : "C15SPE9"
+						},
+						"defender" :{
+							"shape" : [[""], ["TL"], ["TL", "TR"]],
+							"animation" : "C15SPE7",
+							"appearAnimation" : "C15SPE6
+						}
+					}
 				}
 			}
 		},
@@ -68,6 +198,58 @@
 				"range" : "0",
 				"targetModifier":{
 					"clearAffected": true
+				},
+				"battleEffects":{
+					"obstacle":{
+						"type":"core:obstacle",
+						"hidden" : false,
+						"passable" : true,
+						"trap" : false,
+						"trigger" : true,
+						"patchCount" : 1,
+						"turnsRemaining" : 2,
+						"attacker" :{
+							"shape" : [[""]],
+							"range" : [[""], ["TR"]],
+							"animation" : "C07SPF61",
+							"appearAnimation" : "C07SPF60"
+						},
+						"defender" :{
+							"shape" : [[""]],
+							"range" : [[""], ["TL"]],
+							"animation" : "C07SPF61",
+							"appearAnimation" : "C07SPF60"
+						}
+					},
+					"damage":{
+						"type":"core:damage",
+						"optional":false,
+						"automatic":false
+					}
+				}
+			},
+			"advanced":{
+				"battleEffects":{
+					"obstacle":{
+						"attacker" :{
+							"range" : [[""], ["TR"], ["TR", "TL"]]
+						},
+						"defender" :{
+							"range" : [[""], ["TL"], ["TL", "TR"]]
+						}
+					}
+				}
+			},
+			"expert":{
+				"battleEffects":{
+					"obstacle":{
+						"attacker" :{
+							"range" : [[""], ["TR"], ["TR", "TL"]]
+						},
+						"defender" :{
+							"range" : [[""], ["TL"], ["TL", "TR"]]
+						}
+					}
 				}
 			}
 		},

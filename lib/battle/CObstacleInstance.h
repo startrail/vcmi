@@ -24,11 +24,8 @@ struct DLL_LINKAGE CObstacleInstance
 	enum EObstacleType
 	{
 		//ABSOLUTE needs an underscore because it's a Win
-		USUAL, ABSOLUTE_OBSTACLE, SPELL_CREATED, QUICKSAND, LAND_MINE, FORCE_FIELD, FIRE_WALL, MOAT
+		USUAL, ABSOLUTE_OBSTACLE, SPELL_CREATED, MOAT
 	};
-
-
-	//used only for spell-created obstacles
 
 	CObstacleInstance();
 	virtual ~CObstacleInstance();
@@ -48,6 +45,8 @@ struct DLL_LINKAGE CObstacleInstance
 	virtual bool visibleForSide(ui8 side, bool hasNativeStack) const; //0 attacker
 
 	virtual void battleTurnPassed(){};
+
+	virtual int getAnimationYOffset(int imageHeight) const;
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
@@ -79,6 +78,8 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	std::string appearAnimation;
 	std::string animation;
 
+	int animationYOffset;
+
 	std::vector<BattleHex> customSize;
 
 	SpellCreatedObstacle();
@@ -91,6 +92,8 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	bool triggersEffects() const override;
 
 	void battleTurnPassed() override;
+
+	int getAnimationYOffset(int imageHeight) const override;
 
 	void toInfo(ObstacleChanges & info);
 	void fromInfo(const ObstacleChanges & info);

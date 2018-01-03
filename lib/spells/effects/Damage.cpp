@@ -18,7 +18,7 @@
 #include "../../battle/IBattleState.h"
 #include "../../battle/CBattleInfoCallback.h"
 #include "../../CGeneralTextHandler.h"
-
+#include "../../serializer/JsonSerializeFormat.h"
 
 static const std::string EFFECT_NAME = "core:damage";
 
@@ -30,7 +30,8 @@ namespace effects
 VCMI_REGISTER_SPELL_EFFECT(Damage, EFFECT_NAME);
 
 Damage::Damage(const int level)
-	: UnitEffect(level)
+	: UnitEffect(level),
+	customEffectId(-1)
 {
 }
 
@@ -63,6 +64,8 @@ bool Damage::isReceptive(const Mechanics * m, const battle::Unit * unit) const
 
 void Damage::serializeJsonUnitEffect(JsonSerializeFormat & handler)
 {
+	handler.serializeInt("customEffectId", customEffectId, -1);
+
 	serializeJsonDamageEffect(handler);
 }
 
@@ -162,6 +165,11 @@ void Damage::prepareEffects(StacksInjured & stacksInjured, RNG & rng, const Mech
 					multiple = true;
 				damageToDisplay += bsa.damageAmount;
 				killed += bsa.killedAmount;
+			}
+			if(customEffectId >= 0)
+			{
+				bsa.effect = 82;
+				bsa.flags |= BattleStackAttacked::EFFECT;
 			}
 
 			stacksInjured.stacks.push_back(bsa);

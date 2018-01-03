@@ -50,8 +50,5 @@ private:
 	int spellCost;
 };
 
-
-
-
 } //namespace spells
 
