@@ -120,11 +120,7 @@ public:
 	void aimToUnit(const battle::Unit * destination);
 
 	///only apply effects to specified targets
-	void applyEffects(const SpellCastEnvironment * env) const;
-	void applyIndirectEffects(const SpellCastEnvironment * env) const;
-
-	///only apply effects to specified targets and ignore immunity
-	void applyEffectsForced(const SpellCastEnvironment * env) const;
+	void applyEffects(const SpellCastEnvironment * env, bool indirect = false, bool ignoreImmunity = false) const;
 
 	///normal cast
 	void cast(const SpellCastEnvironment * env);
@@ -187,10 +183,7 @@ public:
 	virtual bool canBeCast(Problem & problem) const = 0;
 	virtual bool canBeCastAt(BattleHex destination) const = 0;
 
-	virtual void applyEffects(const SpellCastEnvironment * env, const Target & targets) const = 0;
-	virtual void applyIndirectEffects(const SpellCastEnvironment * env, const Target & targets) const = 0;
-
-	virtual void applyEffectsForced(const SpellCastEnvironment * env, const Target & targets) const = 0;
+	virtual void applyEffects(const SpellCastEnvironment * env, const Target & targets, bool indirect, bool ignoreImmunity) const = 0;
 
 	virtual void cast(const SpellCastEnvironment * env, const Target & target, std::vector <const CStack*> & reflected) = 0;
 

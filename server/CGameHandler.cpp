@@ -4686,7 +4686,7 @@ void CGameHandler::stackEnchantedTrigger(const CStack * st)
 		{
 			battleCast.aimToUnit(st);
 		}
-		battleCast.applyEffectsForced(spellEnv);
+		battleCast.applyEffects(spellEnv, false, true);
 	}
 }
 
@@ -4845,7 +4845,7 @@ bool CGameHandler::handleDamageFromObstacle(const CStack * curStack, bool stackI
 
 			spells::BattleCast battleCast(gs->curB, &caster, spells::Mode::HERO, sp);
 			battleCast.aimToUnit(curStack);
-			battleCast.applyIndirectEffects(spellEnv);
+			battleCast.applyEffects(spellEnv, true);
 
 			if(oneTimeObstacle)
 				removeObstacle(*obstacle);

@@ -25,10 +25,7 @@ public:
 	BattleSpellMechanics(const IBattleCast * event, std::shared_ptr<effects::Effects> e);
 	virtual ~BattleSpellMechanics();
 
-	void applyEffects(const SpellCastEnvironment * env, const Target & targets) const override;
-	void applyIndirectEffects(const SpellCastEnvironment * env, const Target & targets) const override;
-
-	void applyEffectsForced(const SpellCastEnvironment * env, const Target & targets) const override;
+	void applyEffects(const SpellCastEnvironment * env, const Target & targets, bool indirect, bool ignoreImmunity) const override;
 
 	bool canBeCast(Problem & problem) const override;
 	bool canBeCastAt(BattleHex destination) const override;

@@ -271,22 +271,10 @@ void BattleCast::aimToUnit(const battle::Unit * destination)
 		target.push_back(Destination(destination));
 }
 
-void BattleCast::applyEffects(const SpellCastEnvironment * env) const
+void BattleCast::applyEffects(const SpellCastEnvironment * env, bool indirect, bool ignoreImmunity) const
 {
 	auto m = spell->battleMechanics(this);
-	m->applyEffects(env, target);
-}
-
-void BattleCast::applyIndirectEffects(const SpellCastEnvironment * env) const
-{
-	auto m = spell->battleMechanics(this);
-	m->applyIndirectEffects(env, target);
-}
-
-void BattleCast::applyEffectsForced(const SpellCastEnvironment * env) const
-{
-	auto m = spell->battleMechanics(this);
-	m->applyEffectsForced(env, target);
+	m->applyEffects(env, target, indirect, ignoreImmunity);
 }
 
 void BattleCast::cast(const SpellCastEnvironment * env)

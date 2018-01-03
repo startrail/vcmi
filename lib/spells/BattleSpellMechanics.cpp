@@ -132,41 +132,21 @@ BattleSpellMechanics::BattleSpellMechanics(const IBattleCast * event, std::share
 
 BattleSpellMechanics::~BattleSpellMechanics() = default;
 
-void BattleSpellMechanics::applyEffects(const SpellCastEnvironment * env, const Target & targets) const
+void BattleSpellMechanics::applyEffects(const SpellCastEnvironment * env, const Target & targets, bool indirect, bool ignoreImmunity) const
 {
-	auto callback = [&](const effects::Effect * e, bool & stop)
+	auto callback = [&](const effects::Effect * effect, bool & stop)
 	{
-		if(!e->indirect)
+		if(indirect == effect->indirect)
 		{
-			EffectTarget target = e->filterTarget(this, targets);
-			e->apply(env, env->getRandomGenerator(), this, target);
-		}
-	};
-
-	effects->forEachEffect(getEffectLevel(), callback);
-}
-
-void BattleSpellMechanics::applyIndirectEffects(const SpellCastEnvironment * env, const Target & targets) const
-{
-	auto callback = [&](const effects::Effect * e, bool & stop)
-	{
-		if(e->indirect)
-		{
-			EffectTarget target = e->filterTarget(this, targets);
-			e->apply(env, env->getRandomGenerator(), this, target);
-		}
-	};
-
-	effects->forEachEffect(getEffectLevel(), callback);
-}
-
-void BattleSpellMechanics::applyEffectsForced(const SpellCastEnvironment * env, const Target & targets) const
-{
-	auto callback = [&](const effects::Effect * e, bool & stop)
-	{
-		if(!e->indirect)
-		{
-			e->apply(env, env->getRandomGenerator(), this, targets);
+			if(ignoreImmunity)
+			{
+				effect->apply(env, env->getRandomGenerator(), this, targets);
+			}
+			else
+			{
+				EffectTarget target = effect->filterTarget(this, targets);
+				effect->apply(env, env->getRandomGenerator(), this, target);
+			}
 		}
 	};
 
