@@ -17,7 +17,6 @@
 #include "../../NetPacks.h"
 #include "../../battle/IBattleState.h"
 #include "../../battle/CBattleInfoCallback.h"
-#include "../../battle/CObstacleInstance.h"
 #include "../../serializer/JsonSerializeFormat.h"
 
 static const std::string EFFECT_NAME = "core:obstacle";
@@ -103,6 +102,7 @@ Obstacle::Obstacle(const int level)
 	passable(false),
 	trigger(false),
 	trap(false),
+	removeOnTrigger(false),
 	patchCount(1),
 	turnsRemaining(-1)
 {

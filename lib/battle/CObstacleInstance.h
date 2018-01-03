@@ -86,8 +86,8 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 
 	SpellCreatedObstacle();
 
-	std::vector<BattleHex> getAffectedTiles() const override; //for special effects (not blocking)
-	bool visibleForSide(ui8 side, bool hasNativeStack) const override; //0 attacker
+	std::vector<BattleHex> getAffectedTiles() const override;
+	bool visibleForSide(ui8 side, bool hasNativeStack) const override;
 
 	bool blocksTiles() const override;
 	bool stopsMovement() const override;

@@ -102,17 +102,19 @@ bool CObstacleInstance::triggersEffects() const
 }
 
 SpellCreatedObstacle::SpellCreatedObstacle()
+	: turnsRemaining(-1),
+	casterSpellPower(0),
+	spellLevel(0),
+	casterSide(0),
+	hidden(false),
+	passable(false),
+	trigger(false),
+	trap(false),
+	removeOnTrigger(false),
+	revealed(false),
+	animationYOffset(0)
 {
-	casterSide = 0;
-	spellLevel = 0;
-	casterSpellPower = 0;
-	turnsRemaining = -1;
-	hidden = false;
-	passable = false;
-	trigger = false;
-	trap = false;
-	animationYOffset = 0;
-	revealed = false;
+	obstacleType = SPELL_CREATED;
 }
 
 bool SpellCreatedObstacle::visibleForSide(ui8 side, bool hasNativeStack) const
@@ -126,26 +128,17 @@ bool SpellCreatedObstacle::visibleForSide(ui8 side, bool hasNativeStack) const
 
 bool SpellCreatedObstacle::blocksTiles() const
 {
-	if(obstacleType == SPELL_CREATED)
-		return !passable;
-	else
-		return CObstacleInstance::blocksTiles();
+	return !passable;
 }
 
 bool SpellCreatedObstacle::stopsMovement() const
 {
-	if(obstacleType == SPELL_CREATED)
-		return trap;
-	else
-		return CObstacleInstance::stopsMovement();
+	return trap;
 }
 
 bool SpellCreatedObstacle::triggersEffects() const
 {
-	if(obstacleType == SPELL_CREATED)
-		return trigger;
-	else
-		return CObstacleInstance::triggersEffects();
+	return trigger;
 }
 
 void SpellCreatedObstacle::toInfo(ObstacleChanges & info)
@@ -161,7 +154,6 @@ void SpellCreatedObstacle::toInfo(ObstacleChanges & info)
 void SpellCreatedObstacle::fromInfo(const ObstacleChanges & info)
 {
 	uniqueID = info.id;
-	obstacleType = SPELL_CREATED;
 
 	if(info.operation != ObstacleChanges::EOperation::ADD)
 		logGlobal->error("ADD operation expected");

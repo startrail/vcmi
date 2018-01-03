@@ -12,6 +12,7 @@
 
 #include "LocationEffect.h"
 #include "../../battle/BattleHex.h"
+#include "../../battle/CObstacleInstance.h"
 
 namespace spells
 {
