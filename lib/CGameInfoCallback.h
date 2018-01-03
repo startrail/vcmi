@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "int3.h"
 #include "ResourceSet.h" // for Res::ERes
 #include "battle/CPlayerBattleCallback.h"
 
@@ -28,7 +29,6 @@ class CGTeleport;
 class CMapHeader;
 struct TeamState;
 struct QuestInfo;
-class int3;
 struct ShashInt3;
 class CGameState;
 

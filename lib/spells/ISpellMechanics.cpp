@@ -16,8 +16,6 @@
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
 
-#include "../NetPacks.h"
-
 #include "../serializer/JsonDeserializer.h"
 #include "../serializer/JsonSerializer.h"
 
@@ -26,7 +24,6 @@
 
 #include "AdventureSpellMechanics.h"
 #include "BattleSpellMechanics.h"
-#include "CustomSpellMechanics.h"
 
 #include "effects/Effects.h"
 #include "effects/Damage.h"
@@ -74,7 +71,7 @@ class CustomMechanicsFactory : public ISpellMechanicsFactory
 public:
 	std::unique_ptr<Mechanics> create(const IBattleCast * event) const override
 	{
-		CustomSpellMechanics * ret = new CustomSpellMechanics(event, effects);
+		BattleSpellMechanics * ret = new BattleSpellMechanics(event, effects);
 		ret->targetCondition = targetCondition;
 		return std::unique_ptr<Mechanics>(ret);
 	}
@@ -707,7 +704,6 @@ std::vector<AimType> BaseMechanics::getTargetTypes() const
 
 	return ret;
 }
-
 
 } //namespace spells
 

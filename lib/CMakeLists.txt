@@ -99,8 +99,6 @@ set(lib_SRCS
 
 		spells/AdventureSpellMechanics.cpp
 		spells/BattleSpellMechanics.cpp
-		spells/CDefaultSpellMechanics.cpp
-		spells/CustomSpellMechanics.cpp
 		spells/CSpellHandler.cpp
 		spells/ISpellMechanics.cpp
 		spells/Problem.cpp
@@ -261,7 +259,6 @@ set(lib_HEADERS
 
 		spells/AdventureSpellMechanics.h
 		spells/BattleSpellMechanics.h
-		spells/CDefaultSpellMechanics.h
 		spells/CSpellHandler.h
 		spells/ISpellMechanics.h
 		spells/Magic.h
