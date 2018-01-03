@@ -4818,16 +4818,12 @@ bool CGameHandler::handleDamageFromObstacle(const CStack * curStack, bool stackI
 	bool containDamageFromMoat = false;
 	for(auto & obstacle : getAllAffectedObstaclesByStack(curStack))
 	{
-		if(!curStack->alive() || (obstacle->stopsMovement() && stackIsMoving))
-			return false;
-
-		//helper info
-		const SpellCreatedObstacle * spellObstacle = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get()); //not nice but we may need spell params
-
-		const ui8 side = curStack->side;
-
 		if(obstacle->obstacleType == CObstacleInstance::SPELL_CREATED)
 		{
+			//helper info
+			const SpellCreatedObstacle * spellObstacle = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get());
+			const ui8 side = curStack->side;
+
 			if(!spellObstacle)
 				COMPLAIN_RET("Invalid obstacle instance");
 
@@ -4836,8 +4832,8 @@ bool CGameHandler::handleDamageFromObstacle(const CStack * curStack, bool stackI
 
 			const bool oneTimeObstacle = spellObstacle->removeOnTrigger;
 
-			//only hidden obstacle triggers effects
-			if(gs->curB->battleIsObstacleVisibleForSide(*obstacle, (BattlePerspective::BattlePerspective)side))
+			//hidden obstacle triggers effects until revealed
+			if(spellObstacle->hidden && gs->curB->battleIsObstacleVisibleForSide(*obstacle, (BattlePerspective::BattlePerspective)side))
 				continue;
 
 			const CGHeroInstance * hero = gs->curB->battleGetFightingHero(spellObstacle->casterSide);
@@ -4873,12 +4869,12 @@ bool CGameHandler::handleDamageFromObstacle(const CStack * curStack, bool stackI
 			si.stacks.push_back(bsa);
 			sendAndApply(&si);
 		}
-		else
-			continue;
+
+		if(!curStack->alive() || (obstacle->stopsMovement() && stackIsMoving))
+			return false;
 	}
-	if(!curStack->alive())
-		return false;
-	return true;
+
+	return curStack->alive();
 }
 
 void CGameHandler::handleTimeEvents()

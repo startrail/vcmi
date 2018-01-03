@@ -112,6 +112,7 @@ SpellCreatedObstacle::SpellCreatedObstacle()
 	trigger = false;
 	trap = false;
 	animationYOffset = 0;
+	revealed = false;
 }
 
 bool SpellCreatedObstacle::visibleForSide(ui8 side, bool hasNativeStack) const
@@ -120,7 +121,7 @@ bool SpellCreatedObstacle::visibleForSide(ui8 side, bool hasNativeStack) const
 	//quicksands are visible to the caster or if owned unit stepped into that particular patch
 	//additionally if side has a native unit, mines/quicksands will be visible
 
-	return casterSide == side || !hidden || hasNativeStack;
+	return casterSide == side || !hidden || revealed || hasNativeStack;
 }
 
 bool SpellCreatedObstacle::blocksTiles() const

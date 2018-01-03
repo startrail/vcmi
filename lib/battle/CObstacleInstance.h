@@ -75,6 +75,8 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	bool trap;
 	bool removeOnTrigger;
 
+	bool revealed;
+
 	std::string appearAnimation;
 	std::string animation;
 
