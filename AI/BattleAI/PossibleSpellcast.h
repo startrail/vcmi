@@ -26,8 +26,4 @@ public:
 
 	PossibleSpellcast();
 	virtual ~PossibleSpellcast();
-
-protected:
-
-private:
 };
