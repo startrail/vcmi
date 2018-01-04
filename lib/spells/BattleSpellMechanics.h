@@ -25,12 +25,12 @@ public:
 	BattleSpellMechanics(const IBattleCast * event, std::shared_ptr<effects::Effects> e);
 	virtual ~BattleSpellMechanics();
 
-	void applyEffects(const SpellCastEnvironment * env, const Target & targets, bool indirect, bool ignoreImmunity) const override;
+	void applyEffects(const PacketSender * server, vstd::RNG & rng, const Target & targets, bool indirect, bool ignoreImmunity) const override;
 
 	bool canBeCast(Problem & problem) const override;
 	bool canBeCastAt(BattleHex destination) const override;
 
-	void cast(const SpellCastEnvironment * env, const Target & target) override final;
+	void cast(const PacketSender * server, vstd::RNG & rng, const Target & target) override final;
 	void cast(IBattleState * battleState, vstd::RNG & rng, const Target & target) override final;
 
 	std::vector<const CStack *> getAffectedStacks(BattleHex destination) const override final;
@@ -56,7 +56,7 @@ private:
 
 	std::set<const battle::Unit *> collectTargets() const;
 
-	static void doRemoveEffects(const SpellCastEnvironment * env, const std::vector<const battle::Unit *> & targets, const CSelector & selector);
+	static void doRemoveEffects(const PacketSender * server, const std::vector<const battle::Unit *> & targets, const CSelector & selector);
 
 	std::set<BattleHex> spellRangeInHexes(BattleHex centralHex) const;
 

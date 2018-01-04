@@ -132,7 +132,7 @@ BattleSpellMechanics::BattleSpellMechanics(const IBattleCast * event, std::share
 
 BattleSpellMechanics::~BattleSpellMechanics() = default;
 
-void BattleSpellMechanics::applyEffects(const SpellCastEnvironment * env, const Target & targets, bool indirect, bool ignoreImmunity) const
+void BattleSpellMechanics::applyEffects(const PacketSender * server, vstd::RNG & rng, const Target & targets, bool indirect, bool ignoreImmunity) const
 {
 	auto callback = [&](const effects::Effect * effect, bool & stop)
 	{
@@ -140,12 +140,12 @@ void BattleSpellMechanics::applyEffects(const SpellCastEnvironment * env, const 
 		{
 			if(ignoreImmunity)
 			{
-				effect->apply(env, env->getRandomGenerator(), this, targets);
+				effect->apply(server, rng, this, targets);
 			}
 			else
 			{
 				EffectTarget target = effect->filterTarget(this, targets);
-				effect->apply(env, env->getRandomGenerator(), this, target);
+				effect->apply(server, rng, this, target);
 			}
 		}
 	};
@@ -202,7 +202,7 @@ std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(BattleHex de
 	return res;
 }
 
-void BattleSpellMechanics::cast(const SpellCastEnvironment * env, const Target & target)
+void BattleSpellMechanics::cast(const PacketSender * server, vstd::RNG & rng, const Target & target)
 {
 	BattleSpellCast sc;
 
@@ -254,8 +254,7 @@ void BattleSpellMechanics::cast(const SpellCastEnvironment * env, const Target &
 		sc.activeCast = true;
 	}
 
-	beforeCast(sc, env->getRandomGenerator(), target);
-
+	beforeCast(sc, rng, target);
 
 	switch (mode)
 	{
@@ -274,25 +273,25 @@ void BattleSpellMechanics::cast(const SpellCastEnvironment * env, const Target &
 		break;
 	}
 
-	doRemoveEffects(env, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
+	doRemoveEffects(server, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
 
 	for(auto & unit : affectedUnits)
 		sc.affectedCres.insert(unit->unitId());
 
-	env->sendAndApply(&sc);
+	server->sendAndApply(&sc);
 
 	for(auto & p : effectsToApply)
-		p.first->apply(env, env->getRandomGenerator(), this, p.second);
+		p.first->apply(server, rng, this, p.second);
 
 //	afterCast();
 
 	if(sc.activeCast)
 	{
-		caster->spendMana(mode, owner, env, spellCost);
+		caster->spendMana(mode, owner, server, spellCost);
 		if(sc.manaGained > 0)
 		{
 			assert(otherHero);
-			otherHero->spendMana(Mode::HERO, owner, env, -sc.manaGained);
+			otherHero->spendMana(Mode::HERO, owner, server, -sc.manaGained);
 		}
 	}
 }
@@ -410,7 +409,7 @@ std::set<const battle::Unit *> BattleSpellMechanics::collectTargets() const
 	return result;
 }
 
-void BattleSpellMechanics::doRemoveEffects(const SpellCastEnvironment * env, const std::vector<const battle::Unit *> & targets, const CSelector & selector)
+void BattleSpellMechanics::doRemoveEffects(const PacketSender * server, const std::vector<const battle::Unit *> & targets, const CSelector & selector)
 {
 	SetStackEffect sse;
 
@@ -427,7 +426,7 @@ void BattleSpellMechanics::doRemoveEffects(const SpellCastEnvironment * env, con
 	}
 
 	if(!sse.toRemove.empty())
-		env->sendAndApply(&sse);
+		server->sendAndApply(&sse);
 }
 
 bool BattleSpellMechanics::counteringSelector(const Bonus * bonus) const

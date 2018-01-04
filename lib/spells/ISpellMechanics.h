@@ -183,9 +183,9 @@ public:
 	virtual bool canBeCast(Problem & problem) const = 0;
 	virtual bool canBeCastAt(BattleHex destination) const = 0;
 
-	virtual void applyEffects(const SpellCastEnvironment * env, const Target & targets, bool indirect, bool ignoreImmunity) const = 0;
+	virtual void applyEffects(const PacketSender * server, vstd::RNG & rng, const Target & targets, bool indirect, bool ignoreImmunity) const = 0;
 
-	virtual void cast(const SpellCastEnvironment * env, const Target & target) = 0;
+	virtual void cast(const PacketSender * server, vstd::RNG & rng, const Target & target) = 0;
 
 	virtual void cast(IBattleState * battleState, vstd::RNG & rng, const Target & target) = 0;
 

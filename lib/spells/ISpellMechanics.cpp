@@ -274,7 +274,7 @@ void BattleCast::aimToUnit(const battle::Unit * destination)
 void BattleCast::applyEffects(const SpellCastEnvironment * env, bool indirect, bool ignoreImmunity) const
 {
 	auto m = spell->battleMechanics(this);
-	m->applyEffects(env, target, indirect, ignoreImmunity);
+	m->applyEffects(env, env->getRandomGenerator(), target, indirect, ignoreImmunity);
 }
 
 void BattleCast::cast(const SpellCastEnvironment * env)
@@ -297,7 +297,7 @@ void BattleCast::cast(const SpellCastEnvironment * env)
 	bool tryMagicMirror = (mainTarget != nullptr) && (mode == Mode::HERO || mode == Mode::CREATURE_ACTIVE);//TODO: recheck
 	tryMagicMirror = tryMagicMirror && (mainTarget->unitOwner() != caster->getOwner()) && !spell->isPositive();//TODO: recheck
 
-	m->cast(env, target);
+	m->cast(env, env->getRandomGenerator(), target);
 
 	//Magic Mirror effect
 	if(tryMagicMirror)
