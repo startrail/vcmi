@@ -283,32 +283,52 @@ void BattleCast::cast(const SpellCastEnvironment * env)
 		aimToHex(BattleHex::INVALID);
 	auto m = spell->battleMechanics(this);
 
-	std::vector <const CStack*> reflected;//for magic mirror
+	const battle::Unit * mainTarget = nullptr;
 
-	m->cast(env, target, reflected);
+	if(target.front().unitValue)
+	{
+		mainTarget = target.front().unitValue;
+	}
+	else if(target.front().hexValue.isValid())
+	{
+		mainTarget = cb->battleGetUnitByPos(target.front().hexValue, true);
+	}
+
+	bool tryMagicMirror = (mainTarget != nullptr) && (mode == Mode::HERO || mode == Mode::CREATURE_ACTIVE);//TODO: recheck
+	tryMagicMirror = tryMagicMirror && (mainTarget->unitOwner() != caster->getOwner()) && !spell->isPositive();//TODO: recheck
+
+	m->cast(env, target);
 
 	//Magic Mirror effect
-	for(auto & attackedCre : reflected)
+	if(tryMagicMirror)
 	{
-		if(mode == Mode::MAGIC_MIRROR)
-		{
-			logGlobal->error("Magic mirror recurrence!");
-			return;
-		}
+		static const std::string magicMirrorCacheStr = "type_MAGIC_MIRROR";
+		static const auto magicMirrorSelector = Selector::type(Bonus::MAGIC_MIRROR);
 
-		TStacks mirrorTargets = cb->battleGetStacksIf([this](const CStack * battleStack)
-		{
-			//Get all caster stacks. Magic mirror can reflect to immune creature (with no effect)
-			return battleStack->owner == caster->getOwner() && battleStack->isValidTarget(false);
-		});
+		auto rangeGen = env->getRandomGenerator().getInt64Range(0, 99);
 
-		if(!mirrorTargets.empty())
-		{
-			int targetHex = (*RandomGeneratorUtil::nextItem(mirrorTargets, env->getRandomGenerator()))->getPosition();
+		const int mirrorChance = mainTarget->valOfBonuses(magicMirrorSelector, magicMirrorCacheStr);
 
-			BattleCast mirror(*this, attackedCre);
-			mirror.aimToHex(targetHex);
-			mirror.cast(env);
+		if(rangeGen() < mirrorChance)
+		{
+			//TODO: make battle::Unit Caster descendant
+			const CStack * mirrorCaster = cb->battleGetStackByID(mainTarget->unitId(), false);
+
+			auto mirrorTargets = cb->battleGetUnitsIf([this](const battle::Unit * unit)
+			{
+				//Get all caster stacks. Magic mirror can reflect to immune creature (with no effect)
+				return unit->unitOwner() == caster->getOwner() && unit->isValidTarget(true);
+			});
+
+
+			if(!mirrorTargets.empty())
+			{
+				auto mirrorTarget = (*RandomGeneratorUtil::nextItem(mirrorTargets, env->getRandomGenerator()));
+
+				BattleCast mirror(*this, mirrorCaster);
+				mirror.aimToUnit(mirrorTarget);
+				mirror.cast(env);
+			}
 		}
 	}
 }

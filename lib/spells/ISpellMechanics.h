@@ -185,7 +185,7 @@ public:
 
 	virtual void applyEffects(const SpellCastEnvironment * env, const Target & targets, bool indirect, bool ignoreImmunity) const = 0;
 
-	virtual void cast(const SpellCastEnvironment * env, const Target & target, std::vector <const CStack*> & reflected) = 0;
+	virtual void cast(const SpellCastEnvironment * env, const Target & target) = 0;
 
 	virtual void cast(IBattleState * battleState, vstd::RNG & rng, const Target & target) = 0;
 

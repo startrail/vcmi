@@ -202,7 +202,7 @@ std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(BattleHex de
 	return res;
 }
 
-void BattleSpellMechanics::cast(const SpellCastEnvironment * env, const Target & target, std::vector<const CStack *> & reflected)
+void BattleSpellMechanics::cast(const SpellCastEnvironment * env, const Target & target)
 {
 	BattleSpellCast sc;
 
@@ -254,7 +254,7 @@ void BattleSpellMechanics::cast(const SpellCastEnvironment * env, const Target &
 		sc.activeCast = true;
 	}
 
-	beforeCast(sc, env->getRandomGenerator(), target, reflected);
+	beforeCast(sc, env->getRandomGenerator(), target);
 
 
 	switch (mode)
@@ -297,54 +297,34 @@ void BattleSpellMechanics::cast(const SpellCastEnvironment * env, const Target &
 	}
 }
 
-void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, const Target & target, std::vector<const CStack*> & reflected)
+void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, const Target & target)
 {
-	reflected.clear();
 	affectedUnits.clear();
 
 	Target spellTarget = transformSpellTarget(target);
 
-	std::vector <const CStack *> resisted;
+	std::vector <const battle::Unit *> resisted;
 
 	auto rangeGen = rng.getInt64Range(0, 99);
 
-	auto filterReflected = [&, this](const CStack * s) -> bool
-	{
-		const bool tryMagicMirror = mode != Mode::MAGIC_MIRROR && isNegativeSpell() && owner->level && owner->getLevelInfo(0).range == "0";
-		if(tryMagicMirror)
-		{
-			const int mirrorChance = s->valOfBonuses(Bonus::MAGIC_MIRROR);
-			if(rangeGen() < mirrorChance)
-				return true;
-		}
-		return false;
-	};
-
-	auto filterResisted = [&, this](const CStack * s) -> bool
+	auto filterResisted = [&, this](const battle::Unit * unit) -> bool
 	{
 		if(isNegativeSpell())
 		{
 			//magic resistance
-			const int prob = std::min((s)->magicResistance(), 100); //probability of resistance in %
+			const int prob = std::min(unit->magicResistance(), 100); //probability of resistance in %
 			if(rangeGen() < prob)
 				return true;
 		}
 		return false;
 	};
 
-	auto filterUnit = [&](const battle::Unit * st)
+	auto filterUnit = [&](const battle::Unit * unit)
 	{
-		const CStack * s = dynamic_cast<const CStack *>(st);
-
-		if(!s)
-			s = cb->battleGetStackByID(st->unitId(), false);
-
-		if(filterResisted(s))
-			resisted.push_back(s);
-		else if(filterReflected(s))
-			reflected.push_back(s);
+		if(filterResisted(unit))
+			resisted.push_back(unit);
 		else
-			affectedUnits.push_back(s);
+			affectedUnits.push_back(unit);
 	};
 
 	//prepare targets
@@ -363,12 +343,17 @@ void BattleSpellMechanics::beforeCast(BattleSpellCast & sc, vstd::RNG & rng, con
 		{
 			if(!d.unitValue)
 				return false;
-			return vstd::contains(resisted, d.unitValue) || vstd::contains(reflected, d.unitValue);
+			return vstd::contains(resisted, d.unitValue);
 		});
 	}
 
-	for(auto unit : reflected)
-		addCustomEffect(sc, unit, 3);
+	if(mode == Mode::MAGIC_MIRROR)
+	{
+		if(casterUnit)
+		{
+			addCustomEffect(sc, casterUnit, 3);
+		}
+	}
 
 	for(auto unit : resisted)
 		addCustomEffect(sc, unit, 78);

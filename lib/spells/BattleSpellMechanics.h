@@ -30,10 +30,8 @@ public:
 	bool canBeCast(Problem & problem) const override;
 	bool canBeCastAt(BattleHex destination) const override;
 
-	void cast(const SpellCastEnvironment * env, const Target & target, std::vector <const CStack*> & reflected) override final;
+	void cast(const SpellCastEnvironment * env, const Target & target) override final;
 	void cast(IBattleState * battleState, vstd::RNG & rng, const Target & target) override final;
-
-	void beforeCast(BattleSpellCast & sc, vstd::RNG & rng, const Target & target, std::vector <const CStack*> & reflected);
 
 	std::vector<const CStack *> getAffectedStacks(BattleHex destination) const override final;
 
@@ -51,6 +49,8 @@ private:
 	effects::Effects::EffectsToApply effectsToApply;
 
 	std::shared_ptr<effects::Effects> effects;
+
+	void beforeCast(BattleSpellCast & sc, vstd::RNG & rng, const Target & target);
 
 	void addCustomEffect(BattleSpellCast & sc, const battle::Unit * target, ui32 effect);
 
