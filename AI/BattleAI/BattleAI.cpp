@@ -44,6 +44,22 @@ public:
 	}
 };
 
+enum class SpellTypes
+{
+	ADVENTURE, BATTLE, OTHER
+};
+
+SpellTypes spellType(const CSpell * spell)
+{
+	if(!spell->isCombatSpell() || spell->isCreatureAbility())
+		return SpellTypes::OTHER;
+
+	if(spell->isOffensiveSpell() || spell->hasEffects() || spell->hasBattleEffects())
+		return SpellTypes::BATTLE;
+
+	return SpellTypes::OTHER;
+}
+
 CBattleAI::CBattleAI(void)
 	: side(-1), wasWaitingForRealize(false), wasUnlockingGs(false)
 {
@@ -104,7 +120,7 @@ BattleAction CBattleAI::activeStack( const CStack * stack )
 
 		if(auto action = considerFleeingOrSurrendering())
 			return *action;
-		//best action is from effective owner PoV, we are effective owner as we received "activeStack"
+		//best action is from effective owner point if view, we are effective owner as we received "activeStack"
 
 		HypotheticBattle hb(getCbc());
 
@@ -210,22 +226,6 @@ BattleAction CBattleAI::goTowards(const CStack * stack, BattleHex destination)
 BattleAction CBattleAI::useCatapult(const CStack * stack)
 {
 	throw std::runtime_error("CBattleAI::useCatapult is not implemented.");
-}
-
-enum class SpellTypes
-{
-	ADVENTURE, BATTLE, OTHER
-};
-
-SpellTypes spellType(const CSpell * spell)
-{
-	if(!spell->isCombatSpell() || spell->isCreatureAbility())
-		return SpellTypes::OTHER;
-
-	if(spell->isOffensiveSpell() || spell->hasEffects() || spell->hasBattleEffects())
-		return SpellTypes::BATTLE;
-
-	return SpellTypes::OTHER;
 }
 
 void CBattleAI::attemptCastingSpell()
@@ -341,7 +341,7 @@ void CBattleAI::attemptCastingSpell()
 
 				auto bav = pt.bestActionValue();
 
-				//best action is from effective owner PoV, we need to convert to our PoV
+				//best action is from effective owner`s point if view, we need to convert to our point if view
 				if(state->battleGetOwner(unit) != playerID)
 					bav = -bav;
 				values[unit->unitId()] += bav;
@@ -439,15 +439,8 @@ void CBattleAI::attemptCastingSpell()
 				auto gain = newValue - oldValue + healthDiff;
 
 				if(gain != 0)
-				{
-	//				LOGFL("%s would change %s by %d points (from %d to %d)",
-	//					  ps->spell->name % unit->nodeName() % (gain) % (oldValue) % (newValue));
 					totalGain += gain;
-				}
 			}
-
-	//		if(totalGain != 0)
-	//			LOGFL("Total gain of cast %s at hex %d is %d", ps->spell->name % (ps->dest.hex) % (totalGain));
 
 			ps->value = totalGain;
 		}
@@ -455,7 +448,6 @@ void CBattleAI::attemptCastingSpell()
 		{
 			ps->value = -1;
 		}
-
 	};
 
 	std::vector<std::function<void()>> tasks;

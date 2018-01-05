@@ -27,30 +27,30 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const CStack 
 	: state(Stack, this, this),
 	origInfo(Stack),
 	origBearer(Stack),
-	owner(Owner)
+	owner(Owner),
+	type(Stack->type),
+	baseAmount(Stack->baseAmount),
+	id(Stack->ID),
+	side(Stack->side),
+	player(Stack->owner)
 {
 	state = Stack->stackState;
-
-	type = Stack->type;
-	baseAmount = Stack->baseAmount;
-	id =  Stack->ID;
-	side = Stack->side;
-	player = Stack->owner;
 }
 
 StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle::NewUnitInfo & info)
 	: state(this, this, this),
 	origInfo(nullptr),
 	origBearer(nullptr),
-	owner(Owner)
+	owner(Owner),
+	baseAmount(info.count),
+	id(info.id),
+	side(info.side)
 {
 	type = info.type.toCreature();
-	baseAmount = info.count;
-	id = info.id;
-	side = info.side;
+	origBearer = type;
+
 	player = Owner->getSidePlayer(side);
 
-	origBearer = type;
 	state.position = info.position;
 	state.summoned = info.summoned;
 	state.localInit();
@@ -90,7 +90,8 @@ PlayerColor StackWithBonuses::unitOwner() const
 }
 
 SlotID StackWithBonuses::unitSlot() const
-{	if(origInfo)
+{
+	if(origInfo)
 		return origInfo->unitSlot();
 	else
 		return SlotID::SUMMONED_SLOT_PLACEHOLDER;
@@ -160,21 +161,21 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 {
-	for(const Bonus & one : bonus)
+	for(auto & one : bonus)
 	{
 		CSelector selector([&one](const Bonus * b) -> bool
 		{
 			//compare everything but turnsRemain, limiter and propagator
 			return one.duration == b->duration
-			&& one.type == b->type
-			&& one.subtype == b->subtype
-			&& one.source == b->source
-			&& one.val == b->val
-			&& one.sid == b->sid
-			&& one.valType == b->valType
-			&& one.additionalInfo == b->additionalInfo
-			&& one.effectRange == b->effectRange
-			&& one.description == b->description;
+				&& one.type == b->type
+				&& one.subtype == b->subtype
+				&& one.source == b->source
+				&& one.val == b->val
+				&& one.sid == b->sid
+				&& one.valType == b->valType
+				&& one.additionalInfo == b->additionalInfo
+				&& one.effectRange == b->effectRange
+				&& one.description == b->description;
 		});
 
 		removeUnitBonus(selector);
@@ -191,7 +192,6 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 	vstd::erase_if(bonusesToAdd, [&](const Bonus & b){return selector(&b);});
 	vstd::erase_if(bonusesToUpdate, [&](const Bonus & b){return selector(&b);});
 }
-
 
 HypotheticBattle::HypotheticBattle(Subject realBattle)
 	: BattleProxy(realBattle),

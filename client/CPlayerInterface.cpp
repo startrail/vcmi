@@ -701,7 +701,7 @@ void CPlayerInterface::battleUnitsChanged(const std::vector<UnitChanges> & units
 	EVENT_HANDLER_CALLED_BY_CLIENT;
 	BATTLE_EVENT_POSSIBLE_RETURN;
 
-	for(const UnitChanges & info : units)
+	for(auto & info : units)
 	{
 		switch(info.operation)
 		{

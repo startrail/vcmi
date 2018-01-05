@@ -32,5 +32,5 @@ public:
 	int64_t damageDiff() const;
 	int64_t attackValue() const;
 
-	static AttackPossibility evaluate(const BattleAttackInfo & AttackInfo, BattleHex hex);
+	static AttackPossibility evaluate(const BattleAttackInfo & attackInfo, BattleHex hex);
 };

@@ -1437,12 +1437,11 @@ void CBattleInterface::setHeroAnimation(ui8 side, int phase)
 
 void CBattleInterface::castThisSpell(SpellID spellID)
 {
-	auto ba = new BattleAction();
-	ba->actionType = EActionType::HERO_SPELL;
-	ba->actionSubtype = spellID; //spell number
-	ba->stackNumber = (attackingHeroInstance->tempOwner == curInt->playerID) ? -1 : -2;
-	ba->side = defendingHeroInstance ? (curInt->playerID == defendingHeroInstance->tempOwner) : false;
-	spellToCast = ba;
+	spellToCast = new BattleAction();
+	spellToCast->actionType = EActionType::HERO_SPELL;
+	spellToCast->actionSubtype = spellID; //spell number
+	spellToCast->stackNumber = (attackingHeroInstance->tempOwner == curInt->playerID) ? -1 : -2;
+	spellToCast->side = defendingHeroInstance ? (curInt->playerID == defendingHeroInstance->tempOwner) : false;
 	spellDestSelectMode = true;
 	creatureCasting = false;
 
@@ -1848,14 +1847,6 @@ void CBattleInterface::endAction(const BattleAction* action)
 
 	if(action->actionType == EActionType::HERO_SPELL)
 		setHeroAnimation(action->side, 0);
-
-//???
-
-//	if (stack && action->actionType == EActionType::WALK &&
-//		!creAnims[action->stackNumber]->isIdle()) //walk or walk & attack
-//	{
-//		pendingAnims.push_back(std::make_pair(new CMovementEndAnimation(this, stack, action->destinationTile), false));
-//	}
 
 	//check if we should reverse stacks
 	//for some strange reason, it's not enough

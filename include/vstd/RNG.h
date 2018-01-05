@@ -27,8 +27,7 @@ public:
 	virtual TRand getDoubleRange(double lower, double upper) = 0;
 };
 
-} // namespace vstd
-
+}
 
 namespace RandomGeneratorUtil
 {

@@ -43,23 +43,23 @@ int64_t AttackPossibility::attackValue() const
 	return damageDiff() + tacticImpact;
 }
 
-AttackPossibility AttackPossibility::evaluate(const BattleAttackInfo & AttackInfo, BattleHex hex)
+AttackPossibility AttackPossibility::evaluate(const BattleAttackInfo & attackInfo, BattleHex hex)
 {
 	static const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
 	static const auto selectorBlocksRetaliation = Selector::type(Bonus::BLOCKS_RETALIATION);
 
-	const bool counterAttacksBlocked = AttackInfo.attacker->hasBonus(selectorBlocksRetaliation, cachingStringBlocksRetaliation);
+	const bool counterAttacksBlocked = attackInfo.attacker->hasBonus(selectorBlocksRetaliation, cachingStringBlocksRetaliation);
 
-	AttackPossibility ap(hex, AttackInfo);
+	AttackPossibility ap(hex, attackInfo);
 
-	ap.attackerState = AttackInfo.attacker->asquire();
+	ap.attackerState = attackInfo.attacker->asquire();
 
-	const int totalAttacks = AttackInfo.shooting ? ap.attackerState->totalAttacks.getRangedValue() : ap.attackerState->totalAttacks.getMeleeValue();
+	const int totalAttacks = attackInfo.shooting ? ap.attackerState->totalAttacks.getRangedValue() : ap.attackerState->totalAttacks.getMeleeValue();
 
-	if(!AttackInfo.shooting)
+	if(!attackInfo.shooting)
 		ap.attackerState->position = hex;
 
-	auto defenderState = AttackInfo.defender->asquire();
+	auto defenderState = attackInfo.defender->asquire();
 	ap.affectedUnits.push_back(defenderState);
 
 	for(int i = 0; i < totalAttacks; i++)
@@ -75,21 +75,19 @@ AttackPossibility AttackPossibility::evaluate(const BattleAttackInfo & AttackInf
 
 		ap.damageDealt += (attackDmg.first + attackDmg.second) / 2;
 
-		ap.attackerState->afterAttack(AttackInfo.shooting, false);
+		ap.attackerState->afterAttack(attackInfo.shooting, false);
 
 		//FIXME: use ranged retaliation
-		if(!AttackInfo.shooting && defenderState->ableToRetaliate() && !counterAttacksBlocked)
+		if(!attackInfo.shooting && defenderState->ableToRetaliate() && !counterAttacksBlocked)
 		{
 			ap.damageReceived += (retaliation.first + retaliation.second) / 2;
-			defenderState->afterAttack(AttackInfo.shooting, true);
+			defenderState->afterAttack(attackInfo.shooting, true);
 		}
 
 		ap.attackerState->damage(ap.damageReceived);
 		defenderState->damage(ap.damageDealt);
 
-		if(!ap.attackerState->alive())
-			break;
-		if(!defenderState->alive())
+		if(!ap.attackerState->alive() || !defenderState->alive())
 			break;
 	}
 
