@@ -40,6 +40,12 @@ public:
 
 	template<typename Loader>
 	void loadCommonState(Loader &in); //loads GS and VLC
+
+	template<typename Loader>
+	void recieveCommonState(Loader &conn);
+
+	template<typename Loader>
+	void sendCommonState(Loader &conn);
 };
 
 class DLL_LINKAGE IGameEventCallback : public IGameEventRealizer

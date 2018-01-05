@@ -38,69 +38,58 @@ namespace boost
 	}
 };
 
-typedef boost::asio::basic_socket_acceptor<boost::asio::ip::tcp, boost::asio::socket_acceptor_service<boost::asio::ip::tcp> > TAcceptor;
-typedef boost::asio::basic_stream_socket < boost::asio::ip::tcp , boost::asio::stream_socket_service<boost::asio::ip::tcp>  > TSocket;
+typedef boost::asio::basic_socket_acceptor<boost::asio::ip::tcp, boost::asio::socket_acceptor_service<boost::asio::ip::tcp>> TAcceptor;
+typedef boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost::asio::stream_socket_service<boost::asio::ip::tcp>> TSocket;
 
+struct StartInfo;
+struct ServerCapabilities;
 class CVCMIServer
 {
+	enum
+	{
+		INVALID, RUNNING, ENDING_WITHOUT_START, ENDING_AND_STARTING_GAME
+	} state;
 	ui16 port;
-	boost::asio::io_service *io;
+	boost::asio::io_service * io;
 	TAcceptor * acceptor;
-	SharedMemory * shared;
+	SharedMemory * shm;
 
-	CConnection *firstConnection;
+	boost::program_options::variables_map cmdLineOptions;
+
+	CConnection * host;
+	int listeningThreads;
+	std::set<CConnection *> connections;
+	std::list<CPackForSelectionScreen *> toAnnounce;
+	boost::recursive_mutex mx;
+
+	TSocket * upcomingConnection;
+
+	const CMapInfo * curmap;
+	StartInfo * curStartInfo;
+	ServerCapabilities * capabilities;
+
+	void startAsyncAccept();
+	void connectionAccepted(const boost::system::error_code & ec);
+	void startListeningThread(CConnection * pc);
+	void handleConnection(CConnection * cpc);
+
+	void processPack(CPackForSelectionScreen * pack);
+	void sendPack(CConnection * pc, const CPackForSelectionScreen & pack);
+	void announcePack(const CPackForSelectionScreen & pack);
+	void announceTxt(const std::string & txt, const std::string & playerName = "system");
+
 public:
-	CVCMIServer();
+	static std::atomic<bool> shuttingDown;
+
+	CVCMIServer(boost::program_options::variables_map & opts);
 	~CVCMIServer();
 
 	void start();
-	std::shared_ptr<CGameHandler> initGhFromHostingConnection(CConnection &c);
-
-	void newGame();
-	void loadGame();
-	void newPregame();
+	void startGame();
 
 #ifdef VCMI_ANDROID
-    static void create();
+	static void create();
 #endif
 };
 
-struct StartInfo;
-class CPregameServer
-{
-public:
-	CConnection *host;
-	int listeningThreads;
-	std::set<CConnection *> connections;
-	std::list<CPackForSelectionScreen*> toAnnounce;
-	boost::recursive_mutex mx;
-
-	TAcceptor *acceptor;
-	TSocket *upcomingConnection;
-
-	const CMapInfo *curmap;
-	StartInfo *curStartInfo;
-
-	CPregameServer(CConnection *Host, TAcceptor *Acceptor = nullptr);
-	~CPregameServer();
-
-	void run();
-
-	void processPack(CPackForSelectionScreen * pack);
-	void handleConnection(CConnection *cpc);
-	void connectionAccepted(const boost::system::error_code& ec);
-	void initConnection(CConnection *c);
-
-	void start_async_accept();
-
-	enum { INVALID, RUNNING, ENDING_WITHOUT_START, ENDING_AND_STARTING_GAME
-	} state;
-
-	void announceTxt(const std::string &txt, const std::string &playerName = "system");
-	void announcePack(const CPackForSelectionScreen &pack);
-
-	void sendPack(CConnection * pc, const CPackForSelectionScreen & pack);
-	void startListeningThread(CConnection * pc);
-};
-
-extern boost::program_options::variables_map cmdLineOptions;
+//extern std::atomic<bool> CVCMIServer::serverShuttingDown;

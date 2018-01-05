@@ -14,6 +14,7 @@
 #include "../lib/battle/BattleAction.h"
 #include "../lib/CStopWatch.h"
 #include "../lib/int3.h"
+#include "../lib/CondSh.h"
 
 struct CPack;
 class CCampaignState;
@@ -34,6 +35,7 @@ struct CPathsInfo;
 class BinaryDeserializer;
 class BinarySerializer;
 namespace boost { class thread; }
+struct ServerCapabilities;
 
 /// structure to handle running server and connecting to it
 class CServerHandler
@@ -43,22 +45,31 @@ private:
 public:
 	CStopWatch th;
 	boost::thread *serverThread; //thread that called system to run server
-	SharedMemory * shared;
+	SharedMemory * shm;
 	std::string uuid;
 	bool verbose; //whether to print log msgs
+
+	CConnection * c;
+	ServerCapabilities * cap;
+
+	static CondSh<bool> serverAlive;  //used to prevent game start from executing if server is already running
 
 	//functions setting up local server
 	void startServer(); //creates a thread with callServer
 	void waitForServer(); //waits till server is ready
-	CConnection * connectToServer(); //connects to server
+	void startServerAndConnect(); //connects to server
+	bool isServerLocal();
 
 	//////////////////////////////////////////////////////////////////////////
-	static CConnection * justConnectToServer(const std::string &host = "", const ui16 port = 0); //connects to given host without taking any other actions (like setting up server)
+	void justConnectToServer(const std::string &host = "", const ui16 port = 0); //connects to given host without taking any other actions (like setting up server)
 	static ui16 getDefaultPort();
 	static std::string getDefaultPortStr();
 
-	CServerHandler(bool runServer = false);
+	CServerHandler();
 	virtual ~CServerHandler();
+
+	void welcomeServer(std::map<ui8, std::string> & playerNames);
+	void stopConnection();
 };
 
 template<typename T>
@@ -136,9 +147,6 @@ public:
 	std::map<PlayerColor,std::vector<std::shared_ptr<IGameEventsReceiver>>> additionalPlayerInts;
 	std::map<PlayerColor,std::vector<std::shared_ptr<IBattleEventsReceiver>>> additionalBattleInts;
 
-	bool hotSeat;
-	CConnection *serv;
-
 	boost::optional<BattleAction> curbaction;
 
 	CScriptingModule *erm;
@@ -146,13 +154,11 @@ public:
 	static ThreadSafeVector<int> waitingRequest;//FIXME: make this normal field (need to join all threads before client destruction)
 
 
-	//void sendRequest(const CPackForServer *request, bool waitForRealization);
 	CClient(void);
-	CClient(CConnection *con, StartInfo *si);
 	~CClient(void);
 
 	void init();
-	void newGame(CConnection *con, StartInfo *si); //con - connection to server
+	void newGame(StartInfo *si);
 
 	void loadNeutralBattleAI();
 	void installNewPlayerInterface(std::shared_ptr<CGameInterface> gameInterface, boost::optional<PlayerColor> color, bool battlecb = false);
@@ -163,7 +169,7 @@ public:
 	void endGame(bool closeConnection = true);
 	void stopConnection();
 	void save(const std::string & fname);
-	void loadGame(const std::string & fname, const bool server = true, const std::vector<int>& humanplayerindices = std::vector<int>(), const int loadnumplayers = 1, int player_ = -1, const std::string & ipaddr = "", const ui16 port = 0);
+	void loadGame(StartInfo *si);
 	void run();
 	void campaignMapFinished( std::shared_ptr<CCampaignState> camp );
 	void finishCampaign( std::shared_ptr<CCampaignState> camp );
@@ -255,10 +261,10 @@ public:
 	void serialize(BinaryDeserializer & h, const int version, const std::set<PlayerColor>& playerIDs);
 	void battleFinished();
 
-    void startPlayerBattleAction(PlayerColor color);
+	void startPlayerBattleAction(PlayerColor color);
 
-    void stopPlayerBattleAction(PlayerColor color);
-    void stopAllBattleActions();
+	void stopPlayerBattleAction(PlayerColor color);
+	void stopAllBattleActions();
 private:
 	void waitForMoveAndSend(PlayerColor color);
 };

@@ -63,6 +63,8 @@ std::atomic_bool androidTestServerReadyFlag;
 
 ThreadSafeVector<int> CClient::waitingRequest;
 
+CondSh<bool> CServerHandler::serverAlive(false);
+
 template <typename T> class CApplyOnCL;
 
 class CBaseForCLApply
@@ -114,7 +116,6 @@ static CApplier<CBaseForCLApply> *applier = nullptr;
 void CClient::init()
 {
 	waitingRequest.clear();
-	hotSeat = false;
 	{
 		TLockGuard _(connectionHandlerMutex);
 		connectionHandler.reset();
@@ -124,7 +125,6 @@ void CClient::init()
 	registerTypesClientPacks1(*applier);
 	registerTypesClientPacks2(*applier);
 	IObjectInterface::cb = this;
-	serv = nullptr;
 	gs = nullptr;
 	erm = nullptr;
 	terminate = false;
@@ -133,12 +133,6 @@ void CClient::init()
 CClient::CClient(void)
 {
 	init();
-}
-
-CClient::CClient(CConnection *con, StartInfo *si)
-{
-	init();
-	newGame(con,si);
 }
 
 CClient::~CClient(void)
@@ -177,7 +171,7 @@ void CClient::run()
 	{
 		while(!terminate)
 		{
-			CPack *pack = serv->retreivePack(); //get the package from the server
+			CPack *pack = CSH->c->retreivePack(); //get the package from the server
 
 			if (terminate)
 			{
@@ -256,28 +250,68 @@ void CClient::endGame(bool closeConnection)
 	logNetwork->info("Client stopped.");
 }
 
-#if 1
-void CClient::loadGame(const std::string & fname, const bool server, const std::vector<int>& humanplayerindices, const int loadNumPlayers, int player_, const std::string & ipaddr, const ui16 port)
+void CClient::loadGame(StartInfo * si)
 {
-	PlayerColor player(player_); //intentional shadowing
+//	void loadNetworkGame()
+//	{
+//		client = new CClient();
+//		CPlayerInterface::howManyPeople = 1;
+//		client->loadGameNetwork();
+//}
+
+	if(false)//fname.empty())
+	{
+
+		logNetwork->info("MP loading procedure started!");
+
+		try
+		{
+			recieveCommonState(*CSH->c);
+			// logNetwork->info("Loaded common part of save %d ms", tmh.getDiff());
+			const_cast<CGameInfo*>(CGI)->mh = new CMapHandler();
+			const_cast<CGameInfo*>(CGI)->mh->map = gs->map;
+			pathInfo = make_unique<CPathsInfo>(getMapSize());
+			CGI->mh->init();
+		}
+		catch(std::exception &e)
+		{
+			throw; //obviously we cannot continue here
+		}
+
+		CSH->c->addStdVecItems(gs); /*why is this here?*/
+
+		//*loader >> *this;
+
+
+		CSH->c->enableStackSendingByID();
+		CSH->c->disableSmartPointerSerialization();
+
+		auto pid = PlayerColor(1);
+		auto nInt = std::make_shared<CPlayerInterface>(pid);
+
+		nInt->dllName = "";
+		nInt->human = true;
+		nInt->playerID = pid;
+
+		installNewPlayerInterface(nInt, pid);
+		return;
+	}
+
+
+
+	PlayerColor player(); //intentional shadowing
 	logNetwork->info("Loading procedure started!");
 
-	CServerHandler sh;
-	if(server)
-		sh.startServer();
-	else
-		serv = sh.justConnectToServer(ipaddr, port);
-
-	CStopWatch tmh;
+////	CStopWatch tmh;
 	std::unique_ptr<CLoadFile> loader;
 	try
 	{
-		boost::filesystem::path clientSaveName = *CResourceHandler::get("local")->getResourceName(ResourceID(fname, EResType::CLIENT_SAVEGAME));
+		boost::filesystem::path clientSaveName = *CResourceHandler::get("local")->getResourceName(ResourceID(si->mapname, EResType::CLIENT_SAVEGAME));
 		boost::filesystem::path controlServerSaveName;
 
-		if (CResourceHandler::get("local")->existsResource(ResourceID(fname, EResType::SERVER_SAVEGAME)))
+		if (CResourceHandler::get("local")->existsResource(ResourceID(si->mapname, EResType::SERVER_SAVEGAME)))
 		{
-			controlServerSaveName = *CResourceHandler::get("local")->getResourceName(ResourceID(fname, EResType::SERVER_SAVEGAME));
+			controlServerSaveName = *CResourceHandler::get("local")->getResourceName(ResourceID(si->mapname, EResType::SERVER_SAVEGAME));
 		}
 		else// create entry for server savegame. Triggered if save was made after launch and not yet present in res handler
 		{
@@ -286,136 +320,102 @@ void CClient::loadGame(const std::string & fname, const bool server, const std::
 		}
 
 		if(clientSaveName.empty())
-			throw std::runtime_error("Cannot open client part of " + fname);
+			throw std::runtime_error("Cannot open client part of " + si->mapname);
 		if(controlServerSaveName.empty() || !boost::filesystem::exists(controlServerSaveName))
-			throw std::runtime_error("Cannot open server part of " + fname);
+			throw std::runtime_error("Cannot open server part of " + si->mapname);
 
 		{
 			CLoadIntegrityValidator checkingLoader(clientSaveName, controlServerSaveName, MINIMAL_SERIALIZATION_VERSION);
 			loadCommonState(checkingLoader);
 			loader = checkingLoader.decay();
 		}
-		logNetwork->info("Loaded common part of save %d ms", tmh.getDiff());
-		const_cast<CGameInfo*>(CGI)->mh = new CMapHandler();
-		const_cast<CGameInfo*>(CGI)->mh->map = gs->map;
-		pathInfo = make_unique<CPathsInfo>(getMapSize());
-		CGI->mh->init();
-		logNetwork->info("Initing maphandler: %d ms", tmh.getDiff());
+
 	}
 	catch(std::exception &e)
 	{
-		logGlobal->error("Cannot load game %s. Error: %s", fname, e.what());
+		logGlobal->error("Cannot load game %s. Error: %s", si->mapname, e.what());
 		throw; //obviously we cannot continue here
 	}
 
 /*
-    if(!server)
-         player = PlayerColor(player_);
+	if(!server)
+		 player = PlayerColor(player_);
 */
 
-	std::set<PlayerColor> clientPlayers;
-	if(server)
-	serv = sh.connectToServer();
-    //*loader >> *this;
+	//*loader >> *this;
 
-	if(server)
-	{
-		tmh.update();
-		ui8 pom8;
-		*serv << ui8(3) << ui8(loadNumPlayers); //load game; one client if single-player
-		*serv << fname;
-		*serv >> pom8;
-		if(pom8)
-			throw std::runtime_error("Server cannot open the savegame!");
-		else
-			logNetwork->info("Server opened savegame properly.");
-	}
+/////	if(server)
+////	{
+////		ui8 pom8;
+////		*CSH->c << ui8(3) << ui8(loadNumPlayers); //load game; one client if single-player
+////		*CSH->c << fname;
+		//recieveCommonState(*serv);
+////		logNetwork->info("Loaded common part of save %d ms", tmh.getDiff());
+		const_cast<CGameInfo*>(CGI)->mh = new CMapHandler();
+		const_cast<CGameInfo*>(CGI)->mh->map = gs->map;
+		pathInfo = make_unique<CPathsInfo>(getMapSize());
+		CGI->mh->init();
+////		logNetwork->info("Initing maphandler: %d ms", tmh.getDiff());
+////		*CSH->c >> pom8;
+////		if(pom8)
+////			throw std::runtime_error("Server cannot open the savegame!");
+////		else
+////			logNetwork->info("Server opened savegame properly.");
+////	}
 
-	if(server)
-	{
+/*
+		std::vector<std::pair<PlayerColor, PlayerSettings>> humanPlayerInfos;
+		auto selector = [](std::pair<PlayerColor, PlayerSettings> x) -> bool { return x.second.playerID > 0;};
+		std::copy_if(options->playerInfos.begin(), options->playerInfos.end(), std::back_inserter(humanPlayerInfos), selector);
+
+		std::vector<int> humanPlayerIndices;
+		for(auto playerInfo : humanPlayerInfos)
+			humanPlayerIndices.push_back(playerInfo.first.getNum());
+*/
+////	if(server)
+////	{
+		std::set<PlayerColor> clientPlayers;
 		for(auto & elem : gs->scenarioOps->playerInfos)
 		{
-			if(!std::count(humanplayerindices.begin(),humanplayerindices.end(),elem.first.getNum()) || elem.first==player)
+////			if(!std::count(humanplayerindices.begin(),humanplayerindices.end(),elem.first.getNum()) || elem.first==player)
 				clientPlayers.insert(elem.first);
 		}
 		clientPlayers.insert(PlayerColor::NEUTRAL);
-	}
-	else
-	{
-		clientPlayers.insert(player);
-	}
-
-	std::cout << "CLIENTPLAYERS:\n";
-	for(auto x : clientPlayers)
-		std::cout << x << std::endl;
-	std::cout << "ENDCLIENTPLAYERS\n";
+////	}
+//	else
+//	{
+//		clientPlayers.insert(player);
+//	}
 
 	serialize(loader->serializer, loader->serializer.fileVersion, clientPlayers);
-	*serv << ui32(clientPlayers.size());
-	for(auto & elem : clientPlayers)
-		*serv << ui8(elem.getNum());
-	serv->addStdVecItems(gs); /*why is this here?*/
+	*CSH->c << clientPlayers;
+	CSH->c->addStdVecItems(gs); /*why is this here?*/
 
-    //*loader >> *this;
-	logNetwork->info("Loaded client part of save %d ms", tmh.getDiff());
+	//*loader >> *this;
+////	logNetwork->info("Loaded client part of save %d ms", tmh.getDiff());
 
-	logNetwork->info("Sent info to server: %d ms", tmh.getDiff());
+////	logNetwork->info("Sent info to server: %d ms", tmh.getDiff());
 
-    //*serv << clientPlayers;
-	serv->enableStackSendingByID();
-	serv->disableSmartPointerSerialization();
-
-// 	logGlobal->trace("Objects:");
-// 	for(int i = 0; i < gs->map->objects.size(); i++)
-// 	{
-// 		auto o = gs->map->objects[i];
-// 		if(o)
-// 			logGlobal->trace("\tindex=%5d, id=%5d; address=%5d, pos=%s, name=%s", i, o->id, (int)o.get(), o->pos, o->getHoverText());
-// 		else
-// 			logGlobal->trace("\tindex=%5d --- nullptr", i);
-// 	}
+	//*serv << clientPlayers;
+	CSH->c->enableStackSendingByID();
+	CSH->c->disableSmartPointerSerialization();
 }
-#endif
 
-void CClient::newGame( CConnection *con, StartInfo *si )
+void CClient::newGame(StartInfo *si)
 {
 	enum {SINGLE, HOST, GUEST} networkMode = SINGLE;
 
-	if (con == nullptr)
-	{
-		CServerHandler sh;
-		serv = sh.connectToServer();
-	}
-	else
-	{
-		serv = con;
-		networkMode = con->isHost() ? HOST : GUEST;
-	}
-
-	CConnection &c = *serv;
-	////////////////////////////////////////////////////
-
-	logNetwork->info("\tWill send info to server...");
+	networkMode = CSH->c->isHost() ? HOST : GUEST;
 	CStopWatch tmh;
-
-	if(networkMode == SINGLE)
-	{
-		ui8 pom8;
-		c << ui8(2) << ui8(1); //new game; one client
-		c << *si;
-		c >> pom8;
-		if(pom8) throw std::runtime_error("Server cannot open the map!");
-	}
-
-	c >> si;
 	logNetwork->info("\tSending/Getting info to/from the server: %d ms", tmh.getDiff());
-	c.enableStackSendingByID();
-	c.disableSmartPointerSerialization();
+	CSH->c->enableStackSendingByID();
+	CSH->c->disableSmartPointerSerialization();
 
 	// Initialize game state
 	gs = new CGameState();
 	logNetwork->info("\tCreating gamestate: %i",tmh.getDiff());
 
+	*CSH->c >> si;
 	gs->init(si, settings["general"]["saveRandomMaps"].Bool());
 	logNetwork->info("Initializing GameState (together): %d ms", tmh.getDiff());
 
@@ -424,8 +424,7 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 	std::set<PlayerColor> myPlayers;
 	for(auto & elem : gs->scenarioOps->playerInfos)
 	{
-		if((networkMode == SINGLE)                                                      //single - one client has all player
-		   || (networkMode != SINGLE && serv->connectionID == elem.second.playerID)      //multi - client has only "its players"
+		if((networkMode != SINGLE && CSH->c->connectionID == elem.second.playerID)      //multi - client has only "its players"
 		   || (networkMode == HOST && elem.second.playerID == PlayerSettings::PLAYER_AI))//multi - host has all AI players
 		{
 			myPlayers.insert(elem.first); //add player
@@ -433,7 +432,8 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 	}
 	if(networkMode != GUEST)
 		myPlayers.insert(PlayerColor::NEUTRAL);
-	c << myPlayers;
+
+	*CSH->c << myPlayers;
 
 	// Init map handler
 	if(gs->map)
@@ -477,27 +477,13 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 	}
 	loadNeutralBattleAI();
 
-	serv->addStdVecItems(gs);
-	hotSeat = (humanPlayers > 1);
-
-// 	std::vector<FileInfo> scriptModules;
-// 	CFileUtility::getFilesWithExt(scriptModules, LIB_DIR "/scripting", "." LIB_EXT);
-// 	for(FileInfo &m : scriptModules)
-// 	{
-// 		CScriptingModule * nm = CDynLibHandler::getNewScriptingModule(m.name);
-// 		privilagedGameEventReceivers.push_back(nm);
-// 		privilagedBattleEventReceivers.push_back(nm);
-// 		nm->giveActionCB(this);
-// 		nm->giveInfoCB(this);
-// 		nm->init();
-//
-// 		erm = nm; //something tells me that there'll at most one module and it'll be ERM
-// 	}
+	CSH->c->addStdVecItems(gs);
 }
 
 void CClient::serialize(BinarySerializer & h, const int version)
 {
 	assert(h.saving);
+	bool hotSeat = 1;//TODO:COMPATIBILITY
 	h & hotSeat;
 	{
 		ui8 players = playerint.size();
@@ -518,6 +504,7 @@ void CClient::serialize(BinarySerializer & h, const int version)
 void CClient::serialize(BinaryDeserializer & h, const int version)
 {
 	assert(!h.saving);
+	bool hotSeat = 1;//TODO:COMPATIBILITY
 	h & hotSeat;
 	{
 		ui8 players = 0; //fix for uninitialized warning
@@ -571,6 +558,7 @@ void CClient::serialize(BinaryDeserializer & h, const int version)
 void CClient::serialize(BinarySerializer & h, const int version, const std::set<PlayerColor> & playerIDs)
 {
 	assert(h.saving);
+	bool hotSeat = 1;//TODO:COMPATIBILITY
 	h & hotSeat;
 	{
 		ui8 players = playerint.size();
@@ -591,6 +579,7 @@ void CClient::serialize(BinarySerializer & h, const int version, const std::set<
 void CClient::serialize(BinaryDeserializer & h, const int version, const std::set<PlayerColor> & playerIDs)
 {
 	assert(!h.saving);
+	bool hotSeat = 1;//TODO:COMPATIBILITY
 	h & hotSeat;
 	{
 		ui8 players = 0; //fix for uninitialized warning
@@ -705,10 +694,10 @@ void CClient::stopConnection()
 {
 	terminate = true;
 
-	if(serv)
+	if(CSH->c)
 	{
-		boost::unique_lock<boost::mutex>(*serv->wmx);
-		if(serv->isHost()) //request closing connection
+		boost::unique_lock<boost::mutex>(*CSH->c->wmx);
+		if(CSH->c->isHost()) //request closing connection
 		{
 			logNetwork->info("Connection has been requested to be closed.");
 			CloseServer close_server;
@@ -736,10 +725,10 @@ void CClient::stopConnection()
 	}
 
 
-	if (serv) //and delete connection
+	if (CSH->c) //and delete connection
 	{
-		serv->close();
-		vstd::clear_pointer(serv);
+		CSH->c->close();
+		vstd::clear_pointer(CSH->c);
 		logNetwork->warn("Our socket has been closed.");
 	}
 }
@@ -889,7 +878,7 @@ int CClient::sendRequest(const CPack *request, PlayerColor player)
 	logNetwork->trace("Sending a request \"%s\". It'll have an ID=%d.", typeid(*request).name(), requestID);
 
 	waitingRequest.pushBack(requestID);
-	serv->sendPackToServer(*request, player, requestID);
+	CSH->c->sendPackToServer(*request, player, requestID);
 	if(vstd::contains(playerint, player))
 		playerint[player]->requestSent(dynamic_cast<const CPackForServer*>(request), requestID);
 
@@ -1037,14 +1026,15 @@ void CServerHandler::waitForServer()
 	if(settings["session"]["donotstartserver"].Bool())
 		return;
 
-	if(!serverThread)
-		startServer();
+	if(serverThread)
+		serverThread->join();
+	startServer();
 
 	th.update();
 
 #ifndef VCMI_ANDROID
-	if(shared)
-		shared->sr->waitTillReady();
+	if(shm)
+		shm->sr->waitTillReady();
 #else
 	logNetwork->info("waiting for server");
 	while (!androidTestServerReadyFlag.load())
@@ -1059,22 +1049,20 @@ void CServerHandler::waitForServer()
 		logNetwork->info("Waiting for server: %d ms", th.getDiff());
 }
 
-CConnection * CServerHandler::connectToServer()
+void CServerHandler::startServerAndConnect()
 {
 	waitForServer();
 
 	th.update(); //put breakpoint here to attach to server before it does something stupid
 
 #ifndef VCMI_ANDROID
-	CConnection *ret = justConnectToServer(settings["server"]["server"].String(), shared ? shared->sr->port : 0);
+	justConnectToServer(settings["server"]["server"].String(), shm ? shm->sr->port : 0);
 #else
-	CConnection *ret = justConnectToServer(settings["server"]["server"].String());
+	justConnectToServer(settings["server"]["server"].String());
 #endif
 
 	if(verbose)
 		logNetwork->info("\tConnecting to the server: %d ms", th.getDiff());
-
-	return ret;
 }
 
 ui16 CServerHandler::getDefaultPort()
@@ -1090,10 +1078,11 @@ std::string CServerHandler::getDefaultPortStr()
 	return boost::lexical_cast<std::string>(getDefaultPort());
 }
 
-CServerHandler::CServerHandler(bool runServer)
+CServerHandler::CServerHandler()
 {
+	c = nullptr;
 	serverThread = nullptr;
-	shared = nullptr;
+	shm = nullptr;
 	verbose = true;
 	uuid = boost::uuids::to_string(boost::uuids::random_generator()());
 
@@ -1109,11 +1098,11 @@ CServerHandler::CServerHandler(bool runServer)
 	}
 	try
 	{
-		shared = new SharedMemory(sharedMemoryName, true);
+		shm = new SharedMemory(sharedMemoryName, true);
 	}
 	catch(...)
 	{
-		vstd::clear_pointer(shared);
+		vstd::clear_pointer(shm);
 		logNetwork->error("Cannot open interprocess memory. Continue without it...");
 	}
 #endif
@@ -1121,7 +1110,7 @@ CServerHandler::CServerHandler(bool runServer)
 
 CServerHandler::~CServerHandler()
 {
-	delete shared;
+	delete shm;
 	delete serverThread; //detaches, not kills thread
 }
 
@@ -1134,7 +1123,7 @@ void CServerHandler::callServer()
 		+ " --port=" + getDefaultPortStr()
 		+ " --run-by-client"
 		+ " --uuid=" + uuid;
-	if(shared)
+	if(shm)
 	{
 		comm += " --enable-shm";
 		if(settings["session"]["enable-shm-uuid"].Bool())
@@ -1146,31 +1135,30 @@ void CServerHandler::callServer()
 	if (result == 0)
 	{
 		logNetwork->info("Server closed correctly");
-		serverAlive.setn(false);
+		CServerHandler::serverAlive.setn(false);
 	}
 	else
 	{
 		logNetwork->error("Error: server failed to close correctly or crashed!");
 		logNetwork->error("Check %s for more info", logName);
-		serverAlive.setn(false);
+		CServerHandler::serverAlive.setn(false);
 		// TODO: make client return to main menu if server actually crashed during game.
 //		exit(1);// exit in case of error. Othervice without working server VCMI will hang
 	}
 #endif
 }
 
-CConnection * CServerHandler::justConnectToServer(const std::string &host, const ui16 port)
+void CServerHandler::justConnectToServer(const std::string &host, const ui16 port)
 {
-	CConnection *ret = nullptr;
-	while(!ret)
+	while(!c)
 	{
 		try
 		{
 			logNetwork->info("Establishing connection...");
-			ret = new CConnection(	host.size() ? host : settings["server"]["server"].String(),
+			c = new CConnection(	host.size() ? host : settings["server"]["server"].String(),
 									port ? port : getDefaultPort(),
 									NAME);
-			ret->connectionID = 1; // TODO: Refactoring for the server so IDs set outside of CConnection
+			c->connectionID = 1; // TODO: Refactoring for the server so IDs set outside of CConnection
 		}
 		catch(...)
 		{
@@ -1178,7 +1166,31 @@ CConnection * CServerHandler::justConnectToServer(const std::string &host, const
 			SDL_Delay(2000);
 		}
 	}
-	return ret;
+}
+
+void CServerHandler::welcomeServer(std::map<ui8, std::string> & playerNames)
+{
+	c->enterPregameConnectionMode();
+
+	std::vector<std::string> names;
+	for(auto name : playerNames)
+		names.push_back(name.second);
+
+	WelcomeServer ws(uuid, names);
+	*c << &ws;
+}
+
+void CServerHandler::stopConnection()
+{
+	vstd::clear_pointer(c);
+}
+
+bool CServerHandler::isServerLocal()
+{
+	if(serverThread)
+		return true;
+
+	return false;
 }
 
 #ifdef VCMI_ANDROID

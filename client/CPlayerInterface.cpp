@@ -1408,6 +1408,13 @@ void CPlayerInterface::loadGame( BinaryDeserializer & h, const int version )
 	firstCall = -1;
 }
 
+void CPlayerInterface::restoreGame()
+{
+	EVENT_HANDLER_CALLED_BY_CLIENT;
+	towns = cb->getTownsInfo();
+	wanderingHeroes = cb->getHeroesInfo();
+}
+
 void CPlayerInterface::moveHero( const CGHeroInstance *h, CGPath path )
 {
 	LOG_TRACE(logGlobal);

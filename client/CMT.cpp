@@ -54,6 +54,9 @@
 #include "../lib/StringConstants.h"
 #include "../lib/CPlayerState.h"
 #include "gui/CAnimation.h"
+#include "../lib/serializer/Connection.h"
+
+#include <boost/asio.hpp>
 
 #ifdef VCMI_WINDOWS
 #include "SDL_syswm.h"
@@ -91,7 +94,6 @@ SDL_Surface *screen = nullptr, //main screen surface
 std::queue<SDL_Event> events;
 boost::mutex eventsM;
 
-CondSh<bool> serverAlive(false);
 static po::variables_map vm;
 
 //static bool setResolution = false; //set by event handling thread after resolution is adjusted
@@ -103,7 +105,7 @@ void dispose();
 void playIntro();
 static void mainLoop();
 //void requestChangingResolution();
-void startGame(StartInfo * options, CConnection *serv = nullptr);
+void startGame(StartInfo * options);
 void endGame();
 
 #ifndef VCMI_WINDOWS
@@ -259,12 +261,6 @@ int main(int argc, char * argv[])
 		("disable-video", "disable video player")
 		("nointro,i", "skips intro movies")
 		("donotstartserver,d","do not attempt to start server and just connect to it instead server")
-        ("loadserver","specifies we are the multiplayer server for loaded games")
-        ("loadnumplayers",po::value<int>(),"specifies the number of players connecting to a multiplayer game")
-        ("loadhumanplayerindices",po::value<std::vector<int>>(),"Indexes of human players (0=Red, etc.)")
-        ("loadplayer", po::value<int>(),"specifies which player we are in multiplayer loaded games (0=Red, etc.)")
-        ("loadserverip",po::value<std::string>(),"IP for loaded game server")
-		("loadserverport",po::value<std::string>(),"port for loaded game server")
 		("serverport", po::value<si64>(), "override port specified in config file")
 		("saveprefix", po::value<std::string>(), "prefix for auto save files")
 		("savefrequency", po::value<si64>(), "limit auto save creation to each N days");
@@ -441,6 +437,7 @@ int main(int argc, char * argv[])
 
 	CCS = new CClientState();
 	CGI = new CGameInfo(); //contains all global informations about game (texts, lodHandlers, map handler etc.)
+	CSH = new CServerHandler();
 	// Initialize video
 #ifdef DISABLE_VIDEO
 	CCS->videoh = new CEmptyVideoPlayer();
@@ -453,15 +450,17 @@ int main(int argc, char * argv[])
 
 	logGlobal->info("\tInitializing video: %d ms", pomtime.getDiff());
 
-	//initializing audio
-	CCS->soundh = new CSoundHandler();
-	CCS->soundh->init();
-	CCS->soundh->setVolume(settings["general"]["sound"].Float());
-	CCS->musich = new CMusicHandler();
-	CCS->musich->init();
-	CCS->musich->setVolume(settings["general"]["music"].Float());
-	logGlobal->info("Initializing screen and sound handling: %d ms", pomtime.getDiff());
-
+	if(!settings["session"]["headless"].Bool())
+	{
+		//initializing audio
+		CCS->soundh = new CSoundHandler();
+		CCS->soundh->init();
+		CCS->soundh->setVolume(settings["general"]["sound"].Float());
+		CCS->musich = new CMusicHandler();
+		CCS->musich->init();
+		CCS->musich->setVolume(settings["general"]["music"].Float());
+		logGlobal->info("Initializing screen and sound handling: %d ms", pomtime.getDiff());
+	}
 #ifdef __APPLE__
 	// Ctrl+click should be treated as a right click on Mac OS X
 	SDL_SetHint(SDL_HINT_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK, "1");
@@ -1330,12 +1329,12 @@ static void mainLoop()
 	}
 }
 
-void startGame(StartInfo * options, CConnection *serv)
+void startGame(StartInfo * options)
 {
 	if(!settings["session"]["donotstartserver"].Bool())
 	{
-		serverAlive.waitWhileTrue();
-		serverAlive.setn(true);
+		CServerHandler::serverAlive.waitWhileTrue();
+		CServerHandler::serverAlive.setn(true);
 	}
 
 	if(settings["session"]["onlyai"].Bool())
@@ -1358,16 +1357,13 @@ void startGame(StartInfo * options, CConnection *serv)
 	switch(options->mode) //new game
 	{
 	case StartInfo::NEW_GAME:
-	case StartInfo::CAMPAIGN:
-		client->newGame(serv, options);
+		client->newGame(options);
+		break;
+	case StartInfo::CAMPAIGN: //MPTODO
+		client->newGame(options);
 		break;
 	case StartInfo::LOAD_GAME:
-		std::string fname = options->mapname;
-		boost::algorithm::erase_last(fname,".vlgm1");
-        if(!vm.count("loadplayer"))
-            client->loadGame(fname);
-        else
-			client->loadGame(fname,vm.count("loadserver"),vm.count("loadhumanplayerindices") ? vm["loadhumanplayerindices"].as<std::vector<int>>() : std::vector<int>(),vm.count("loadnumplayers") ? vm["loadnumplayers"].as<int>() : 1,vm["loadplayer"].as<int>(),vm.count("loadserverip") ? vm["loadserverip"].as<std::string>() : "", vm.count("loadserverport") ? vm["loadserverport"].as<ui16>() : CServerHandler::getDefaultPort());
+		client->loadGame(options);
 		break;
 	}
 	{

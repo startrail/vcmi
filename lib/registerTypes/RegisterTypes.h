@@ -350,6 +350,7 @@ void registerTypesPregamePacks(Serializer &s)
 	s.template registerType<CPack, CPackForSelectionScreen>();
 	s.template registerType<CPackForSelectionScreen, CPregamePackToPropagate>();
 	s.template registerType<CPackForSelectionScreen, CPregamePackToHost>();
+	s.template registerType<CPackForSelectionScreen, CPregamePackToServer>();
 
 	s.template registerType<CPregamePackToPropagate, ChatMessage>();
 	s.template registerType<CPregamePackToPropagate, QuitMenuWithoutStarting>();
@@ -359,9 +360,14 @@ void registerTypesPregamePacks(Serializer &s)
 	s.template registerType<CPregamePackToPropagate, PlayerLeft>();
 	s.template registerType<CPregamePackToPropagate, PlayersNames>();
 	s.template registerType<CPregamePackToPropagate, StartWithCurrentSettings>();
+	s.template registerType<CPregamePackToPropagate, WelcomeClient>();
 
 	s.template registerType<CPregamePackToHost, PlayerJoined>();
 	s.template registerType<CPregamePackToHost, RequestOptionsChange>();
+
+	s.template registerType<CPregamePackToServer, WelcomeServer>();
+	s.template registerType<CPregamePackToServer, RequestHost>();
+
 }
 
 template<typename Serializer>

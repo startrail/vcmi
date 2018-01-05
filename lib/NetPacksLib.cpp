@@ -1869,3 +1869,9 @@ DLL_LINKAGE Component::Component(const CStackBasicDescriptor &stack)
 	: id(CREATURE), subtype(stack.type->idNumber), val(stack.count), when(0)
 {
 }
+
+DLL_LINKAGE WelcomeClient::WelcomeClient(ServerCapabilities & cap, int id)
+{
+	capabilities = &cap;
+	connectionId = id;
+}

@@ -119,11 +119,6 @@ public:
 
 extern CGuiHandler GH; //global gui handler
 
-template <typename T> void pushIntT()
-{
-	GH.pushInt(new T());
-}
-
 struct SObjectConstruction
 {
 	CIntObject *myObj;

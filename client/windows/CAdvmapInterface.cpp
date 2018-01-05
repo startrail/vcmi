@@ -1206,7 +1206,7 @@ void CAdvMapInt::keyPressed(const SDL_KeyboardEvent & key)
 		return;
 	case SDLK_s:
 		if(isActive() && key.type == SDL_KEYUP)
-			GH.pushInt(new CSavingScreen(CPlayerInterface::howManyPeople > 1));
+			GH.pushInt(new CSavingScreen());//MPTODO CPlayerInterface::howManyPeople > 1));
 		return;
 	case SDLK_d:
 		{

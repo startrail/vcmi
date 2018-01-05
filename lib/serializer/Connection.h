@@ -59,7 +59,8 @@ public:
 	bool connected;
 	bool myEndianess, contactEndianess; //true if little endian, if endianness is different we'll have to revert received multi-byte vars
 	boost::asio::io_service *io_service;
-	std::string name; //who uses this connection
+	std::vector<std::string> names;
+	std::string uuid; //who uses this connection
 
 	int connectionID;
 	boost::thread *handler;

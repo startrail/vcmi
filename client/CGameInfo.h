@@ -11,6 +11,7 @@
 
 
 #include "../lib/ConstTransitivePtr.h"
+#include "../lib/CondSh.h"
 
 class CModHandler;
 class CMapHandler;
@@ -30,6 +31,7 @@ class CConsoleHandler;
 class CCursorHandler;
 class CGameState;
 class IMainVideoPlayer;
+class CServerHandler;
 
 class CMap;
 
@@ -70,3 +72,7 @@ public:
 	CGameInfo();
 };
 extern const CGameInfo* CGI;
+
+//TODO: MOVE LATER
+extern CServerHandler * CSH;
+////////////// extern CondSh<bool> serverAlive;

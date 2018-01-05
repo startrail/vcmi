@@ -618,7 +618,7 @@ void CSystemOptionsWindow::bloadf()
 void CSystemOptionsWindow::bsavef()
 {
 	GH.popIntTotally(this);
-	GH.pushInt(new CSavingScreen(CPlayerInterface::howManyPeople > 1));
+	GH.pushInt(new CSavingScreen());//MPTODO CPlayerInterface::howManyPeople > 1));
 }
 
 void CSystemOptionsWindow::brestartf()

@@ -336,7 +336,7 @@ void UpdateCampaignState::applyCl(CClient *cl)
 
 void PrepareForAdvancingCampaign::applyCl(CClient *cl)
 {
-	cl->serv->prepareForSendingHeroes();
+	CSH->c->prepareForSendingHeroes();
 }
 
 void RemoveObject::applyFirstCl(CClient *cl)

@@ -59,7 +59,7 @@
 
 namespace fs = boost::filesystem;
 
-void startGame(StartInfo * options, CConnection *serv = nullptr);
+void startGame(StartInfo * options);
 void endGame();
 
 CGPreGame * CGP = nullptr;
@@ -75,20 +75,7 @@ static PlayerColor playerColor; //if more than one player - applies to the first
  * The name of the savegame can then be stored non-statically in CGameState and
  * passed separately to CSaveGameScreen.
  */
-static std::string saveGameName;
-
-struct EvilHlpStruct
-{
-	CConnection *serv;
-	StartInfo *sInfo;
-
-	void reset()
-	{
-//		vstd::clear_pointer(serv);
-		vstd::clear_pointer(sInfo);
-	}
-
-} startingInfo;
+static std::string saveGameName; //MPTODO
 
 static void do_quit()
 {
@@ -329,9 +316,9 @@ static std::function<void()> genCommand(CMenuScreen* menu, std::vector<std::stri
 				{
 					switch (std::find(gameType.begin(), gameType.end(), commands.front()) - gameType.begin())
 					{
-                        case 0: return std::bind(&CGPreGame::openSel, CGP, CMenuScreen::newGame, CMenuScreen::SINGLE_PLAYER);
-						case 1: return &pushIntT<CMultiMode>;
-                        case 2: return std::bind(&CGPreGame::openSel, CGP, CMenuScreen::campaignList, CMenuScreen::SINGLE_PLAYER);
+						case 0: return std::bind(CGPreGame::openSel, CMenuScreen::newGame, CMenuScreen::MULTI_NETWORK_HOST, nullptr);
+						case 1: return []()	{ GH.pushInt(new CMultiMode(CMenuScreen::newGame)); };
+						case 2: return std::bind(CGPreGame::openSel, CMenuScreen::campaignList, CMenuScreen::MULTI_NETWORK_HOST, nullptr);
 						//TODO: start tutorial
                         case 3: return std::bind(CInfoWindow::showInfoDialog, "Sorry, tutorial is not implemented yet\n", (const std::vector<CComponent*>*)nullptr, false, PlayerColor(1));
 					}
@@ -340,9 +327,9 @@ static std::function<void()> genCommand(CMenuScreen* menu, std::vector<std::stri
 				{
 					switch (std::find(gameType.begin(), gameType.end(), commands.front()) - gameType.begin())
 					{
-						case 0: return std::bind(&CGPreGame::openSel, CGP, CMenuScreen::loadGame, CMenuScreen::SINGLE_PLAYER);
-						case 1: return std::bind(&CGPreGame::openSel, CGP, CMenuScreen::loadGame, CMenuScreen::MULTI_HOT_SEAT);
-						case 2: return std::bind(&CGPreGame::openSel, CGP, CMenuScreen::loadGame, CMenuScreen::SINGLE_CAMPAIGN);
+						case 0: return std::bind(CGPreGame::openSel, CMenuScreen::loadGame, CMenuScreen::MULTI_NETWORK_HOST, nullptr);
+						case 1: return []()	{ GH.pushInt(new CMultiMode(CMenuScreen::loadGame)); };
+						case 2: return std::bind(CGPreGame::openSel, CMenuScreen::loadGame, CMenuScreen::SINGLE_CAMPAIGN, nullptr);
 						//TODO: load tutorial
                         case 3: return std::bind(CInfoWindow::showInfoDialog, "Sorry, tutorial is not implemented yet\n", (const std::vector<CComponent*>*)nullptr, false, PlayerColor(1));
 					}
@@ -485,9 +472,14 @@ CGPreGame::~CGPreGame()
 		GH.curInt = nullptr;
 }
 
-void CGPreGame::openSel(CMenuScreen::EState screenType, CMenuScreen::EGameMode gameMode)
+void CGPreGame::openSel(CMenuScreen::EState screenType, CMenuScreen::EGameMode gameMode, const std::map<ui8, std::string> * Names)
 {
-	GH.pushInt(new CSelectionScreen(screenType, gameMode));
+	GH.pushInt(new CSelectionScreen(screenType, gameMode, Names));
+
+	if(gameMode == CMenuScreen::MULTI_NETWORK_HOST && !settings["session"]["donotstartserver"].Bool())
+		CSH->startServerAndConnect();
+	else
+		GH.pushInt(new CSimpleJoinScreen());
 }
 
 void CGPreGame::loadGraphics()
@@ -559,24 +551,15 @@ void CGPreGame::removeFromGui()
 	GH.popInt(GH.topInt()); //remove background
 }
 
-CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode, const std::map<ui8, std::string> * Names, const std::string & Address, const ui16 Port)
+CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode, const std::map<ui8, std::string> * Names)
 	: ISelectionScreenInfo(Names), serverHandlingThread(nullptr), mx(new boost::recursive_mutex),
-	  serv(nullptr), ongoingClosing(false), myNameID(255)
+	  ongoingClosing(false), myNameID(255)
 {
 	CGPreGame::create(); //we depend on its graphics
 	screenType = Type;
 	gameMode = GameMode;
 
 	OBJ_CONSTRUCTION_CAPTURING_ALL;
-
-	bool network = (isGuest() || isHost());
-
-	CServerHandler *sh = nullptr;
-	if(isHost())
-	{
-		sh = new CServerHandler();
-		sh->startServer();
-	}
 
 	IShowActivatable::type = BLOCK_ADV_HOTKEYS;
 	pos.w = 762;
@@ -608,7 +591,7 @@ CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameM
 	sInfo.turnTime = 0;
 	curTab = nullptr;
 
-	card = new InfoCard(network); //right info card
+	card = new InfoCard(); //right info card
 	if (screenType == CMenuScreen::campaignList)
 	{
 		opt = nullptr;
@@ -656,26 +639,40 @@ CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameM
 
 			start  = new CButton(Point(411, 535), "SCNRBEG.DEF", CGI->generaltexth->zelp[103], std::bind(&CSelectionScreen::startScenario, this), SDLK_b);
 
-			if(network)
-			{
-				CButton *hideChat = new CButton(Point(619, 83), "GSPBUT2.DEF", CGI->generaltexth->zelp[48], std::bind(&InfoCard::toggleChat, card), SDLK_h);
-				hideChat->addTextOverlay(CGI->generaltexth->allTexts[531], FONT_SMALL);
+			CButton *hideChat = new CButton(Point(619, 83), "GSPBUT2.DEF", CGI->generaltexth->zelp[48], std::bind(&InfoCard::toggleChat, card), SDLK_h);
+			hideChat->addTextOverlay(CGI->generaltexth->allTexts[531], FONT_SMALL);
 
-				if(isGuest())
-				{
-					select->block(true);
-					opts->block(true);
-					randomBtn->block(true);
-					start->block(true);
-				}
+			if(isGuest())
+			{
+				select->block(true);
+				opts->block(true);
+				randomBtn->block(true);
+				start->block(true);
 			}
 		}
 		break;
 	case CMenuScreen::loadGame:
+		////////FIXME
+		////////FIXME
+		CButton *opts2 = new CButton(Point(411, 510), "GSPBUTT.DEF", CGI->generaltexth->zelp[46], std::bind(&CSelectionScreen::toggleTab, this, opt), SDLK_a);
+		opts2->addTextOverlay(CGI->generaltexth->allTexts[501], FONT_SMALL, Colors::WHITE);
+		////////FIXME
+		////////FIXME
+
 		sel->recActions = 255;
+		curTab = sel;
 		start  = new CButton(Point(411, 535), "SCNRLOD.DEF", CGI->generaltexth->zelp[103], std::bind(&CSelectionScreen::startScenario, this), SDLK_l);
+
+		if(GameMode == CMenuScreen::EGameMode::MULTI_NETWORK_HOST)
+		{
+			SDL_Color orange = { 232, 184, 32, 0 };
+			SDL_Color overlayColor = isGuest() ? orange : Colors::WHITE;
+
+			CButton *opts = new CButton(Point(411, 510), "GSPBUTT.DEF", CGI->generaltexth->zelp[46], std::bind(&CSelectionScreen::toggleTab, this, opt), SDLK_a);
+			opts->addTextOverlay(CGI->generaltexth->allTexts[501], FONT_SMALL, overlayColor);
+		}
 		break;
-	case CMenuScreen::saveGame:
+/*	case CMenuScreen::saveGame:
 		sel->recActions = 255;
 		start  = new CButton(Point(411, 535), "SCNRSAV.DEF", CGI->generaltexth->zelp[103], std::bind(&CSelectionScreen::startScenario, this), SDLK_s);
 		break;
@@ -683,77 +680,38 @@ CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameM
 		sel->recActions = 255;
 		start  = new CButton(Point(411, 535), "SCNRLOD.DEF", CButton::tooltip(), std::bind(&CSelectionScreen::startCampaign, this), SDLK_b);
 		break;
+		*/
 	}
 
 	start->assignedKeys.insert(SDLK_RETURN);
 
 	back = new CButton(Point(581, 535), "SCNRBACK.DEF", CGI->generaltexth->zelp[105], std::bind(&CGuiHandler::popIntTotally, &GH, this), SDLK_ESCAPE);
 
-	if(network)
-	{
-		if(isHost())
-		{
-			assert(playerNames.size() == 1  &&  vstd::contains(playerNames, 1)); //TODO hot-seat/network combo
-			if(settings["session"]["donotstartserver"].Bool())
-				serv = CServerHandler::justConnectToServer(Address, Port);
-			else
-				serv = sh->connectToServer();
-			*serv << (ui8) 4;
-			myNameID = 1;
-		}
-		else
-			serv = CServerHandler::justConnectToServer(Address, Port);
-
-		serv->enterPregameConnectionMode();
-		*serv << playerNames.begin()->second;
-
-		if(isGuest())
-		{
-			const CMapInfo *map;
-			*serv >> myNameID >> map;
-			serv->connectionID = myNameID;
-			changeSelection(map);
-		}
-		else if(current)
-		{
-			SelectMap sm(*current);
-			*serv << &sm;
-
-			UpdateStartOptions uso(sInfo);
-			*serv << &uso;
-		}
-
-		applier = new CApplier<CBaseForPGApply>();
-		registerTypesPregamePacks(*applier);
-		serverHandlingThread = new boost::thread(&CSelectionScreen::handleConnection, this);
-	}
-	delete sh;
+	serverHandlingThread = new boost::thread(&CSelectionScreen::handleConnection, this);
 }
 
 CSelectionScreen::~CSelectionScreen()
 {
 	ongoingClosing = true;
-	if(serv)
+	if(serverHandlingThread)
 	{
-		assert(serverHandlingThread);
 		QuitMenuWithoutStarting qmws;
-		*serv << &qmws;
-// 		while(!serverHandlingThread->timed_join(boost::posix_time::milliseconds(50)))
-// 			processPacks();
+		*CSH->c << &qmws;
+		while(!serverHandlingThread->timed_join(boost::posix_time::milliseconds(50)))
+			processPacks();
 		serverHandlingThread->join();
 		delete serverHandlingThread;
 	}
 	playerColor = PlayerColor::CANNOT_DETERMINE;
 	playerNames.clear();
 
-	assert(!serv);
 	vstd::clear_pointer(applier);
 	delete mx;
 }
 
 void CSelectionScreen::toggleTab(CIntObject *tab)
 {
-	if(isHost() && serv)
+	if(isHost() && CSH->c)
 	{
 		PregameGuiAction pga;
 		if(tab == curTab)
@@ -765,7 +723,7 @@ void CSelectionScreen::toggleTab(CIntObject *tab)
 		else if(tab == randMapTab)
 			pga.action = PregameGuiAction::OPEN_RANDOM_MAP_OPTIONS;
 
-		*serv << &pga;
+		*CSH->c << &pga;
 	}
 
 	if(curTab && curTab->active)
@@ -782,6 +740,13 @@ void CSelectionScreen::toggleTab(CIntObject *tab)
 	else
 	{
 		curTab = nullptr;
+
+		if(screenType == CMenuScreen::loadGame)
+		{
+			curTab = sel;
+			curTab->recActions = 255;
+			curTab->activate();
+		}
 	}
 	GH.totalRedraw();
 }
@@ -823,13 +788,13 @@ void CSelectionScreen::changeSelection(const CMapInfo * to)
 		opt->recreate();
 	}
 
-	if(isHost() && serv)
+	if(isHost() && CSH->c)
 	{
 		SelectMap sm(*to);
-		*serv << &sm;
+		*CSH->c << &sm;
 
 		UpdateStartOptions uso(sInfo);
-		*serv << &uso;
+		*CSH->c << &uso;
 	}
 }
 
@@ -860,7 +825,7 @@ void CSelectionScreen::startScenario()
 	{
 		start->block(true);
 		StartWithCurrentSettings swcs;
-		*serv << &swcs;
+		*CSH->c << &swcs;
 		ongoingClosing = true;
 		return;
 	}
@@ -901,7 +866,7 @@ void CSelectionScreen::startScenario()
 
 		auto   si = new StartInfo(sInfo);
 		CGP->removeFromGui();
-        CGP->showLoadingScreen(std::bind(&startGame, si, (CConnection *)nullptr));
+		CGP->showLoadingScreen(std::bind(&startGame, si));
 	}
 	else
 	{
@@ -936,13 +901,34 @@ void CSelectionScreen::difficultyChange( int to )
 void CSelectionScreen::handleConnection()
 {
 	setThreadName("CSelectionScreen::handleConnection");
+
+	while(!CSH->c)
+		boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+
+	applier = new CApplier<CBaseForPGApply>();
+	registerTypesPregamePacks(*applier);
+	CSH->welcomeServer(playerNames);
+
+	if(isHost())
+	{
+
+		if(current)
+		{
+			SelectMap sm(*current);
+			*CSH->c << &sm;
+
+			UpdateStartOptions uso(sInfo);
+			*CSH->c << &uso;
+		}
+	}
+
 	try
 	{
-		assert(serv);
-		while(serv)
+		assert(CSH->c);
+		while(CSH->c)
 		{
 			CPackForSelectionScreen *pack = nullptr;
-			*serv >> pack;
+			*CSH->c >> pack;
 			logNetwork->trace("Received a pack of type %s", typeid(*pack).name());
 			assert(pack);
 			if(QuitMenuWithoutStarting *endingPack = dynamic_cast<QuitMenuWithoutStarting *>(pack))
@@ -1020,36 +1006,36 @@ void CSelectionScreen::update()
 
 void CSelectionScreen::propagateOptions()
 {
-	if(isHost() && serv)
+	if(isHost() && CSH->c)
 	{
 		UpdateStartOptions ups(sInfo);
-		*serv << &ups;
+		*CSH->c << &ups;
 	}
 }
 
 void CSelectionScreen::postRequest(ui8 what, ui8 dir)
 {
-	if(!isGuest() || !serv)
+	if(!isGuest() || !CSH->c)
 		return;
 
 	RequestOptionsChange roc(what, dir, myNameID);
-	*serv << &roc;
+	*CSH->c << &roc;
 }
 
 void CSelectionScreen::postChatMessage(const std::string &txt)
 {
-	assert(serv);
+	assert(CSH->c);
 	ChatMessage cm;
 	cm.message = txt;
 	cm.playerName = sInfo.getPlayersSettings(myNameID)->name;
-	*serv << &cm;
+	*CSH->c << &cm;
 }
 
 void CSelectionScreen::propagateNames()
 {
 	PlayersNames pn;
 	pn.playerNames = playerNames;
-	*serv << &pn;
+	*CSH->c << &pn;
 }
 
 void CSelectionScreen::showAll(SDL_Surface *to)
@@ -1164,12 +1150,12 @@ void SelectionTab::parseGames(const std::unordered_set<ResourceID> &files, CMenu
 			// Filter out other game modes
 			bool isCampaign = mapInfo.scenarioOpts->mode == StartInfo::CAMPAIGN;
 			bool isMultiplayer = mapInfo.actualHumanPlayers > 1;
-			switch(gameMode)
+			switch(gameMode) /// MPTODO
 			{
-			case CMenuScreen::SINGLE_PLAYER:
-				if(isMultiplayer || isCampaign)
-					mapInfo.mapHeader.reset();
-				break;
+////			case CMenuScreen::SINGLE_PLAYER:
+////				if(isMultiplayer || isCampaign)
+////					mapInfo.mapHeader.reset();
+////				break;
 			case CMenuScreen::SINGLE_CAMPAIGN:
 				if(!isCampaign)
 					mapInfo.mapHeader.reset();
@@ -2019,8 +2005,8 @@ void CChatBox::addNewMessage(const std::string &text)
 		chatHistory->slider->moveToMax();
 }
 
-InfoCard::InfoCard( bool Network )
-  : sizes(nullptr), bg(nullptr), network(Network), chatOn(false), chat(nullptr), playerListBg(nullptr),
+InfoCard::InfoCard()
+  : sizes(nullptr), bg(nullptr), chatOn(false), chat(nullptr), playerListBg(nullptr),
 	difficulty(nullptr)
 {
 	OBJ_CONSTRUCTION_CAPTURING_ALL;
@@ -2066,14 +2052,11 @@ InfoCard::InfoCard( bool Network )
 			}
 		}
 
-		if(network)
-		{
-			playerListBg = new CPicture("CHATPLUG.bmp", 16, 276);
-			chat = new CChatBox(Rect(26, 132, 340, 132));
+		playerListBg = new CPicture("CHATPLUG.bmp", 16, 276);
+		chat = new CChatBox(Rect(26, 132, 340, 132));
 
-			chatOn = true;
-			mapDescription->disable();
-		}
+		chatOn = true;
+		mapDescription->disable();
 	}
 
 	victory = new CAnimImage("SCNRVICT",0, 0, 24, 302);
@@ -3156,7 +3139,8 @@ bool mapSorter::operator()(const CMapInfo *aaa, const CMapInfo *bbb)
 	}
 }
 
-CMultiMode::CMultiMode()
+CMultiMode::CMultiMode(CMenuScreen::EState State)
+	: state(State)
 {
 	OBJ_CONSTRUCTION_CAPTURING_ALL;
 	bg = new CPicture("MUPOPUP.bmp");
@@ -3167,37 +3151,35 @@ CMultiMode::CMultiMode()
 	bar = new CGStatusBar(new CPicture(Rect(7, 465, 440, 18), 0));//226, 472
 	txt = new CTextInput(Rect(19, 436, 334, 16), *bg);
 	txt->setText(settings["general"]["playerName"].String()); //Player
+	txt->cb += std::bind(&CMultiMode::onNameChange, this, _1);
 
-	btns[0] = new CButton(Point(373, 78),        "MUBHOT.DEF",  CGI->generaltexth->zelp[266], std::bind(&CMultiMode::openHotseat, this));
-	btns[1] = new CButton(Point(373, 78 + 57*1), "MUBHOST.DEF", CButton::tooltip("Host TCP/IP game", ""), std::bind(&CMultiMode::hostTCP, this));
-	btns[2] = new CButton(Point(373, 78 + 57*2), "MUBJOIN.DEF", CButton::tooltip("Join TCP/IP game", ""), std::bind(&CMultiMode::joinTCP, this));
-	btns[6] = new CButton(Point(373, 424),       "MUBCANC.DEF", CGI->generaltexth->zelp[288], [&](){ GH.popIntTotally(this);}, SDLK_ESCAPE);
-}
+	btns[0] = new CButton(Point(373, 78), "MUBHOT.DEF", CGI->generaltexth->zelp[266], std::bind(&CMultiMode::hostTCP, this));
+	btns[1] = new CButton(Point(373, 78 + 57 * 1), "MUBHOST.DEF", CButton::tooltip("Host TCP/IP game", ""), std::bind(&CMultiMode::hostTCP, this));
+	btns[2] = new CButton(Point(373, 78 + 57 * 2), "MUBJOIN.DEF", CButton::tooltip("Join TCP/IP game", ""), std::bind(&CMultiMode::joinTCP, this));
+	btns[6] = new CButton(Point(373, 424), "MUBCANC.DEF", CGI->generaltexth->zelp[288], [&]() { GH.popIntTotally(this);}, SDLK_ESCAPE);
 
-void CMultiMode::openHotseat()
-{
-	GH.pushInt(new CHotSeatPlayers(txt->text));
 }
 
 void CMultiMode::hostTCP()
 {
-	Settings name = settings.write["general"]["playerName"];
-	name->String() = txt->text;
 	GH.popIntTotally(this);
-	if(settings["session"]["donotstartserver"].Bool())
-		GH.pushInt(new CSimpleJoinScreen(CMenuScreen::MULTI_NETWORK_HOST));
-	else
-		GH.pushInt(new CSelectionScreen(CMenuScreen::newGame, CMenuScreen::MULTI_NETWORK_HOST));
+	GH.pushInt(new CMultiPlayers(settings["general"]["playerName"].String(), CMenuScreen::MULTI_NETWORK_HOST, state));
 }
 
 void CMultiMode::joinTCP()
 {
-	Settings name = settings.write["general"]["playerName"];
-	name->String() = txt->text;
-	GH.pushInt(new CSimpleJoinScreen(CMenuScreen::MULTI_NETWORK_GUEST));
+	GH.popIntTotally(this);
+	GH.pushInt(new CMultiPlayers(settings["general"]["playerName"].String(), CMenuScreen::MULTI_NETWORK_GUEST, state));
 }
 
-CHotSeatPlayers::CHotSeatPlayers(const std::string &firstPlayer)
+void CMultiMode::onNameChange(std::string newText)
+{
+	Settings name = settings.write["general"]["playerName"];
+	name->String() = newText;
+}
+
+CMultiPlayers::CMultiPlayers(const std::string &firstPlayer, CMenuScreen::EGameMode Mode, CMenuScreen::EState State)
+	: mode(Mode), state(State)
 {
 	OBJ_CONSTRUCTION_CAPTURING_ALL;
 	bg = new CPicture("MUHOTSEA.bmp");
@@ -3211,10 +3193,10 @@ CHotSeatPlayers::CHotSeatPlayers(const std::string &firstPlayer)
 	for(int i = 0; i < ARRAY_COUNT(txt); i++)
 	{
 		txt[i] = new CTextInput(Rect(60, 85 + i*30, 280, 16), *bg);
-        txt[i]->cb += std::bind(&CHotSeatPlayers::onChange, this, _1);
+		txt[i]->cb += std::bind(&CMultiPlayers::onChange, this, _1);
 	}
 
-	ok = new CButton(Point(95, 338), "MUBCHCK.DEF", CGI->generaltexth->zelp[560], std::bind(&CHotSeatPlayers::enterSelectionScreen, this), SDLK_RETURN);
+	ok = new CButton(Point(95, 338), "MUBCHCK.DEF", CGI->generaltexth->zelp[560], std::bind(&CMultiPlayers::enterSelectionScreen, this), SDLK_RETURN);
 	cancel = new CButton(Point(205, 338), "MUBCANC.DEF", CGI->generaltexth->zelp[561], std::bind(&CGuiHandler::popIntTotally, std::ref(GH), this), SDLK_ESCAPE);
 	bar = new CGStatusBar(new CPicture(Rect(7, 381, 348, 18), 0));//226, 472
 
@@ -3222,7 +3204,7 @@ CHotSeatPlayers::CHotSeatPlayers(const std::string &firstPlayer)
 	txt[0]->giveFocus();
 }
 
-void CHotSeatPlayers::onChange(std::string newText)
+void CMultiPlayers::onChange(std::string newText)
 {
 	size_t namesCount = 0;
 
@@ -3230,10 +3212,10 @@ void CHotSeatPlayers::onChange(std::string newText)
 		if(!elem->text.empty())
 			namesCount++;
 
-	ok->block(namesCount < 2);
+// MPTODO	ok->block(namesCount < 2);
 }
 
-void CHotSeatPlayers::enterSelectionScreen()
+void CMultiPlayers::enterSelectionScreen()
 {
 	std::map<ui8, std::string> names;
 	for(int i = 0, j = 1; i < ARRAY_COUNT(txt); i++)
@@ -3244,7 +3226,8 @@ void CHotSeatPlayers::enterSelectionScreen()
 	name->String() = names.begin()->second;
 
 	GH.popInts(2); //pop MP mode window and this
-	GH.pushInt(new CSelectionScreen(CMenuScreen::newGame, CMenuScreen::MULTI_HOT_SEAT, &names));
+
+	CGPreGame::openSel(state, mode, &names);
 }
 
 void CBonusSelection::init()
@@ -3737,7 +3720,7 @@ void CBonusSelection::startMap()
 		auto exitCb = [=]()
 		{
 			logGlobal->info("Starting scenario %d", selectedMap);
-            CGP->showLoadingScreen(std::bind(&startGame, si, (CConnection *)nullptr));
+			CGP->showLoadingScreen(std::bind(&startGame, si));
 		};
 
 		const CCampaignScenario & scenario = ourCampaign->camp->scenarios[selectedMap];
@@ -3918,11 +3901,11 @@ void CBonusSelection::CRegion::show(SDL_Surface * to)
 	}
 }
 
-CSavingScreen::CSavingScreen(bool hotseat)
+CSavingScreen::CSavingScreen()
 	: CSelectionScreen(
 		CMenuScreen::saveGame,
-		hotseat ? CMenuScreen::MULTI_HOT_SEAT : (LOCPLINT->cb->getStartInfo()->mode == StartInfo::CAMPAIGN ? CMenuScreen::SINGLE_CAMPAIGN : CMenuScreen::SINGLE_PLAYER)
-	)
+		(LOCPLINT->cb->getStartInfo()->mode == StartInfo::CAMPAIGN ? CMenuScreen::SINGLE_CAMPAIGN : CMenuScreen::MULTI_NETWORK_HOST)
+				  )
 {
 	ourGame = mapInfoFromGame();
 	sInfo = *LOCPLINT->cb->getStartInfo();
@@ -3936,7 +3919,7 @@ CSavingScreen::~CSavingScreen()
 
 ISelectionScreenInfo::ISelectionScreenInfo(const std::map<ui8, std::string> * Names)
 {
-	gameMode = CMenuScreen::SINGLE_PLAYER;
+	gameMode = CMenuScreen::MULTI_NETWORK_HOST;
 	screenType = CMenuScreen::mainMenu;
 	assert(!SEL);
 	SEL = this;
@@ -3993,16 +3976,14 @@ void QuitMenuWithoutStarting::apply(CSelectionScreen *selScreen)
 {
 	if(!selScreen->ongoingClosing)
 	{
-		*selScreen->serv << this; //resend to confirm
+		*CSH->c << this; //resend to confirm
 		GH.popIntTotally(selScreen); //will wait with deleting us before this thread ends
 	}
-
-	vstd::clear_pointer(selScreen->serv);
+	CSH->stopConnection();
 }
 
 void PlayerJoined::apply(CSelectionScreen *selScreen)
 {
-	//assert(SEL->playerNames.size() == connectionID); //temporary, TODO when player exits
 	SEL->playerNames[connectionID] = playerName;
 
 	//put new player in first slot with AI
@@ -4109,20 +4090,14 @@ void PlayersNames::apply(CSelectionScreen *selScreen)
 
 void StartWithCurrentSettings::apply(CSelectionScreen *selScreen)
 {
-	startingInfo.reset();
-	startingInfo.serv = selScreen->serv;
-	startingInfo.sInfo = new StartInfo(selScreen->sInfo);
-
 	if(!selScreen->ongoingClosing)
 	{
-		*selScreen->serv << this; //resend to confirm
+		*CSH->c << this; //resend to confirm
 	}
-
-	selScreen->serv = nullptr; //hide it so it won't be deleted
 	vstd::clear_pointer(selScreen->serverHandlingThread); //detach us
 	saveGameName.clear();
 
-    CGP->showLoadingScreen(std::bind(&startGame, startingInfo.sInfo, startingInfo.serv));
+	CGP->showLoadingScreen(std::bind(&startGame, new StartInfo(selScreen->sInfo)));
 	throw 666; //EVIL, EVIL, EVIL workaround to kill thread (does "goto catch" outside listening loop)
 }
 
@@ -4332,7 +4307,7 @@ void CPrologEpilogVideo::clickLeft( tribool down, bool previousState )
 	exitCb();
 }
 
-CSimpleJoinScreen::CSimpleJoinScreen(CMenuScreen::EGameMode mode)
+CSimpleJoinScreen::CSimpleJoinScreen()
 {
 	OBJ_CONSTRUCTION_CAPTURING_ALL;
 	bg = new CPicture("MUDIALOG.bmp"); // address background
@@ -4348,7 +4323,7 @@ CSimpleJoinScreen::CSimpleJoinScreen(CMenuScreen::EGameMode mode)
     port->cb += std::bind(&CSimpleJoinScreen::onChange, this, _1);
     port->filters += std::bind(&CTextInput::numberFilter, _1, _2, 0, 65535);
 
-	ok     = new CButton(Point( 26, 142), "MUBCHCK.DEF", CGI->generaltexth->zelp[560], std::bind(&CSimpleJoinScreen::enterSelectionScreen, this, mode), SDLK_RETURN);
+	ok     = new CButton(Point( 26, 142), "MUBCHCK.DEF", CGI->generaltexth->zelp[560], std::bind(&CSimpleJoinScreen::connectToServer, this), SDLK_RETURN);
 	cancel = new CButton(Point(142, 142), "MUBCANC.DEF", CGI->generaltexth->zelp[561], std::bind(&CGuiHandler::popIntTotally, std::ref(GH), this), SDLK_ESCAPE);
 	bar = new CGStatusBar(new CPicture(Rect(7, 186, 218, 18), 0));
 
@@ -4357,17 +4332,29 @@ CSimpleJoinScreen::CSimpleJoinScreen(CMenuScreen::EGameMode mode)
 	address->giveFocus();
 }
 
-void CSimpleJoinScreen::enterSelectionScreen(CMenuScreen::EGameMode mode)
+void CSimpleJoinScreen::connectToServer()
 {
-	std::string textAddress = address->text;
-	std::string textPort = port->text;
+	CSH->justConnectToServer(address->text, boost::lexical_cast<ui16>(port->text));
 
 	GH.popIntTotally(this);
-
-	GH.pushInt(new CSelectionScreen(CMenuScreen::newGame, mode, nullptr, textAddress, boost::lexical_cast<ui16>(textPort)));
 }
+
 void CSimpleJoinScreen::onChange(const std::string & newText)
 {
 	ok->block(address->text.empty() || port->text.empty());
 }
+
+void WelcomeClient::apply(CSelectionScreen * sel)
+{
+	CSH->c->connectionID = connectionId;
+//	sel->changeSelection(curmap);
+}
+
+
+
+
+
+
+
+
 

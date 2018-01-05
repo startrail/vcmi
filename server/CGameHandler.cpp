@@ -46,7 +46,7 @@
 #ifndef _MSC_VER
 #include <boost/thread/xtime.hpp>
 #endif
-extern std::atomic<bool> serverShuttingDown;
+extern std::atomic<bool> CVCMIServer::shuttingDown;
 #ifdef min
 #undef min
 #endif
@@ -1025,7 +1025,7 @@ void CGameHandler::handleConnection(std::set<PlayerColor> players, CConnection &
 		conns -= &c;
 		for(auto playerConn : connections)
 		{
-			if(!serverShuttingDown && playerConn.second == &c)
+			if(!CVCMIServer::shuttingDown && playerConn.second == &c)
 			{
 				PlayerCheated pc;
 				pc.player = playerConn.first;
@@ -1115,7 +1115,7 @@ void CGameHandler::handleConnection(std::set<PlayerColor> players, CConnection &
 	}
 	catch(...)
 	{
-		serverShuttingDown = true;
+		CVCMIServer::shuttingDown = true;
 		handleException();
 		throw;
 	}
@@ -1847,7 +1847,7 @@ void CGameHandler::run(bool resume)
 
 	auto playerTurnOrder = generatePlayerTurnOrder();
 
-	while(!serverShuttingDown)
+	while(!CVCMIServer::shuttingDown)
 	{
 		if (!resume) newTurn();
 
@@ -1888,7 +1888,7 @@ void CGameHandler::run(bool resume)
 
 					//wait till turn is done
 					boost::unique_lock<boost::mutex> lock(states.mx);
-					while(states.players.at(playerColor).makingTurn && !serverShuttingDown)
+					while(states.players.at(playerColor).makingTurn && !CVCMIServer::shuttingDown)
 					{
 						static time_duration p = milliseconds(100);
 						states.cv.timed_wait(lock, p);
@@ -1904,7 +1904,7 @@ void CGameHandler::run(bool resume)
 					activePlayer = true;
 		}
 		if (!activePlayer)
-			serverShuttingDown = true;
+			CVCMIServer::shuttingDown = true;
 	}
 	while(conns.size() && (*conns.begin())->isOpen())
 		boost::this_thread::sleep(boost::posix_time::milliseconds(5)); //give time client to close socket
@@ -2665,7 +2665,7 @@ void CGameHandler::save(const std::string & filename)
 void CGameHandler::close()
 {
 	logGlobal->info("We have been requested to close.");
-	serverShuttingDown = true;
+	CVCMIServer::shuttingDown = true;
 
 	for (auto & elem : conns)
 	{
@@ -5074,7 +5074,7 @@ void CGameHandler::checkVictoryLossConditionsForPlayer(PlayerColor player)
 
 			if (p->human)
 			{
-				serverShuttingDown = true;
+				CVCMIServer::shuttingDown = true;
 
 				if (gs->scenarioOps->campState)
 				{

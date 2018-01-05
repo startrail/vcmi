@@ -72,8 +72,9 @@ public:
 		mainMenu, newGame, loadGame, campaignMain, saveGame, scenarioInfo, campaignList
 	};
 
-	enum EGameMode {
-		SINGLE_PLAYER = 0, MULTI_HOT_SEAT, MULTI_NETWORK_HOST, MULTI_NETWORK_GUEST, SINGLE_CAMPAIGN
+	enum EGameMode { //MPTODO
+////		SINGLE_PLAYER = 0, MULTI_HOT_SEAT,
+		MULTI_NETWORK_HOST = 0, MULTI_NETWORK_GUEST, SINGLE_CAMPAIGN
 	};
 	CMenuScreen(const JsonNode& configNode);
 
@@ -129,7 +130,6 @@ class InfoCard : public CIntObject
 public:
 	CPicture *bg;
 
-	bool network;
 	bool chatOn;  //if chat is shown, then description is hidden
 	CTextBox *mapDescription;
 	CChatBox *chat;
@@ -143,7 +143,7 @@ public:
 	void showTeamsPopup();
 	void toggleChat();
 	void setChat(bool activateChat);
-	InfoCard(bool Network = false);
+	InfoCard();
 	~InfoCard();
 };
 
@@ -190,7 +190,7 @@ public:
 	void clickLeft(tribool down, bool previousState) override;
 	void keyPressed(const SDL_KeyboardEvent & key) override;
 	void onDoubleClick() override;
-	SelectionTab(CMenuScreen::EState Type, const std::function<void(CMapInfo *)> &OnSelect, CMenuScreen::EGameMode GameMode = CMenuScreen::SINGLE_PLAYER);
+	SelectionTab(CMenuScreen::EState Type, const std::function<void(CMapInfo *)> &OnSelect, CMenuScreen::EGameMode GameMode = CMenuScreen::MULTI_NETWORK_HOST);
     ~SelectionTab();
 };
 
@@ -366,11 +366,10 @@ public:
 	boost::recursive_mutex *mx;
 	std::list<CPackForSelectionScreen *> upcomingPacks; //protected by mx
 
-	CConnection *serv; //connection to server, used in MP mode
 	bool ongoingClosing;
 	ui8 myNameID; //used when networking - otherwise all player are "mine"
 
-	CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode = CMenuScreen::SINGLE_PLAYER, const std::map<ui8, std::string> * Names = nullptr, const std::string & Address = "", const ui16 Port = 0);
+	CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode = CMenuScreen::MULTI_NETWORK_HOST, const std::map<ui8, std::string> * Names = nullptr);
 	~CSelectionScreen();
 	void toggleTab(CIntObject *tab);
 	void changeSelection(const CMapInfo *to);
@@ -397,7 +396,7 @@ public:
 	const CMapInfo *ourGame;
 
 
-	CSavingScreen(bool hotseat = false);
+	CSavingScreen();
 	~CSavingScreen();
 };
 
@@ -417,20 +416,24 @@ public:
 class CMultiMode : public CIntObject
 {
 public:
+	CMenuScreen::EState state;
 	CPicture *bg;
 	CTextInput *txt;
 	CButton *btns[7]; //0 - hotseat, 6 - cancel
 	CGStatusBar *bar;
 
-	CMultiMode();
-	void openHotseat();
+	CMultiMode(CMenuScreen::EState State);
 	void hostTCP();
 	void joinTCP();
+
+	void onNameChange(std::string newText);
 };
 
 /// Hot seat player window
-class CHotSeatPlayers : public CIntObject
+class CMultiPlayers : public CIntObject
 {
+	CMenuScreen::EGameMode mode;
+	CMenuScreen::EState state;
 	CPicture *bg;
 	CTextBox *title;
 	CTextInput* txt[8];
@@ -441,7 +444,7 @@ class CHotSeatPlayers : public CIntObject
 	void enterSelectionScreen();
 
 public:
-	CHotSeatPlayers(const std::string &firstPlayer);
+	CMultiPlayers(const std::string &firstPlayer, CMenuScreen::EGameMode Mode, CMenuScreen::EState State);
 };
 
 
@@ -600,7 +603,7 @@ class CGPreGame : public CIntObject, public IUpdateable
 	void loadGraphics();
 	void disposeGraphics();
 
-	CGPreGame(); //Use createIfNotPresent
+    CGPreGame(); //Use createIfNotPresent
 
 public:
 	CMenuScreen * menu;
@@ -609,7 +612,7 @@ public:
 
 	~CGPreGame();
 	void update() override;
-	void openSel(CMenuScreen::EState type, CMenuScreen::EGameMode gameMode = CMenuScreen::SINGLE_PLAYER);
+	static void openSel(CMenuScreen::EState type, CMenuScreen::EGameMode gameMode = CMenuScreen::MULTI_NETWORK_HOST, const std::map<ui8, std::string> * Names = nullptr);
 
 	void openCampaignScreen(std::string name);
 
@@ -640,10 +643,10 @@ class CSimpleJoinScreen : public CIntObject
 	CTextInput * address;
 	CTextInput * port;
 
-	void enterSelectionScreen(CMenuScreen::EGameMode mode);
+	void connectToServer();
 	void onChange(const std::string & newText);
 public:
-	CSimpleJoinScreen(CMenuScreen::EGameMode mode);
+	CSimpleJoinScreen();
 };
 
 extern ISelectionScreenInfo *SEL;

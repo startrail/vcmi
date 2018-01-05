@@ -37,6 +37,7 @@ struct ArtSlotInfo;
 struct QuestInfo;
 class CMapInfo;
 struct StartInfo;
+struct ServerCapabilities;
 
 struct CPackForClient : public CPack
 {
@@ -2396,13 +2397,16 @@ struct CenterView : public CPackForClient
 
 struct CPackForSelectionScreen : public CPack
 {
-	void apply(CSelectionScreen *selScreen) {} // implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen) {}
 };
 
 class CPregamePackToPropagate  : public CPackForSelectionScreen
 {};
 
 class CPregamePackToHost  : public CPackForSelectionScreen
+{};
+
+class CPregamePackToServer  : public CPackForSelectionScreen
 {};
 
 struct ChatMessage : public CPregamePackToPropagate
@@ -2419,7 +2423,7 @@ struct ChatMessage : public CPregamePackToPropagate
 
 struct QuitMenuWithoutStarting : public CPregamePackToPropagate
 {
-	void apply(CSelectionScreen *selScreen); //that functions are implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{}
@@ -2430,7 +2434,7 @@ struct PlayerJoined : public CPregamePackToHost
 	std::string playerName;
 	ui8 connectionID;
 
-	void apply(CSelectionScreen *selScreen); //that functions are implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
@@ -2448,7 +2452,7 @@ struct ELF_VISIBILITY SelectMap : public CPregamePackToPropagate
 	DLL_LINKAGE SelectMap();
 	DLL_LINKAGE ~SelectMap();
 
-	void apply(CSelectionScreen *selScreen); //that functions are implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
@@ -2462,7 +2466,7 @@ struct ELF_VISIBILITY UpdateStartOptions : public CPregamePackToPropagate
 	StartInfo *options;
 	bool free;//local flag, do not serialize
 
-	void apply(CSelectionScreen *selScreen); //that functions are implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen);
 
 	DLL_LINKAGE UpdateStartOptions(StartInfo &src);
 	DLL_LINKAGE UpdateStartOptions();
@@ -2480,7 +2484,7 @@ struct PregameGuiAction : public CPregamePackToPropagate
 	enum {NO_TAB, OPEN_OPTIONS, OPEN_SCENARIO_LIST, OPEN_RANDOM_MAP_OPTIONS}
 		action;
 
-	void apply(CSelectionScreen *selScreen); //that functions are implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
@@ -2502,7 +2506,7 @@ struct RequestOptionsChange : public CPregamePackToHost
 		:what(0), direction(0), playerID(0)
 	{}
 
-	void apply(CSelectionScreen *selScreen); //that functions are implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
@@ -2516,7 +2520,7 @@ struct PlayerLeft : public CPregamePackToPropagate
 {
 	ui8 playerID;
 
-	void apply(CSelectionScreen *selScreen); //that functions are implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
@@ -2526,10 +2530,9 @@ struct PlayerLeft : public CPregamePackToPropagate
 
 struct PlayersNames : public CPregamePackToPropagate
 {
-public:
 	std::map<ui8, std::string> playerNames;
 
-	void apply(CSelectionScreen *selScreen); //that functions are implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
@@ -2539,11 +2542,55 @@ public:
 
 struct StartWithCurrentSettings : public CPregamePackToPropagate
 {
-public:
-	void apply(CSelectionScreen *selScreen); //that functions are implemented in CPreGame.cpp
+	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
 		//h & playerNames;
+	}
+};
+
+struct WelcomeClient : public CPregamePackToPropagate
+{
+	int connectionId;
+	ServerCapabilities * capabilities;
+	const CMapInfo * curmap;
+
+	DLL_LINKAGE WelcomeClient(){};
+	DLL_LINKAGE WelcomeClient(ServerCapabilities & cap, int id);
+
+	void apply(CSelectionScreen *selScreen);
+
+	template <typename Handler> void serialize(Handler &h, const int version)
+	{
+		h & connectionId;
+		h & capabilities;
+//		h & curmap;
+	}
+};
+
+struct WelcomeServer : public CPregamePackToServer
+{
+	std::string uuid;
+	std::vector<std::string> names;
+
+	WelcomeServer(){};
+	WelcomeServer(std::string & UUID, std::vector<std::string> Names)
+		: uuid(UUID), names(Names) {}
+
+	template <typename Handler> void serialize(Handler & h, const int version)
+	{
+		h & uuid;
+		h & names;
+	}
+};
+
+struct RequestHost : public CPregamePackToServer
+{
+	std::string uuid;
+
+	template <typename Handler> void serialize(Handler & h, const int version)
+	{
+		h & uuid;
 	}
 };

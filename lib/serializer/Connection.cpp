@@ -32,8 +32,9 @@ using namespace boost::asio::ip;
 
 void CConnection::init()
 {
-	boost::asio::ip::tcp::no_delay option(true);
-	socket->set_option(option);
+	socket->set_option(boost::asio::ip::tcp::no_delay(true));
+	socket->set_option(boost::asio::socket_base::send_buffer_size(4194304));
+	socket->set_option(boost::asio::socket_base::receive_buffer_size(4194304));
 
 	enableSmartPointerSerialization();
 	disableStackSendingByID();
@@ -47,7 +48,7 @@ void CConnection::init()
 	connected = true;
 	std::string pom;
 	//we got connection
-	oser & std::string("Aiya!\n") & name & myEndianess; //identify ourselves
+	oser & std::string("Aiya!\n") & uuid & myEndianess; //identify ourselves
 	iser & pom & pom & contactEndianess;
 	logNetwork->info("Established connection with %s", pom);
 	wmx = new boost::mutex();
@@ -61,7 +62,7 @@ void CConnection::init()
 }
 
 CConnection::CConnection(std::string host, ui16 port, std::string Name)
-:iser(this), oser(this), io_service(new asio::io_service), name(Name)
+:iser(this), oser(this), io_service(new asio::io_service), uuid(Name)
 {
 	int i;
 	boost::system::error_code error = asio::error::host_not_found;
@@ -116,12 +117,12 @@ connerror1:
 	throw std::runtime_error("Can't establish connection :(");
 }
 CConnection::CConnection(TSocket * Socket, std::string Name )
-	:iser(this), oser(this), socket(Socket),io_service(&Socket->get_io_service()), name(Name)//, send(this), rec(this)
+	:iser(this), oser(this), socket(Socket),io_service(&Socket->get_io_service()), uuid(Name)//, send(this), rec(this)
 {
 	init();
 }
 CConnection::CConnection(TAcceptor * acceptor, boost::asio::io_service *Io_service, std::string Name)
-: iser(this), oser(this), name(Name)//, send(this), rec(this)
+: iser(this), oser(this), uuid(Name)//, send(this), rec(this)
 {
 	boost::system::error_code error = asio::error::host_not_found;
 	socket = new tcp::socket(*io_service);
@@ -280,7 +281,7 @@ void CConnection::enableSmartVectorMemberSerializatoin()
 
 std::string CConnection::toString() const
 {
-    boost::format fmt("Connection with %s (ID: %d)");
-    fmt % name % connectionID;
-    return fmt.str();
+	boost::format fmt("Connection with %s (ID: %d)");
+	fmt % uuid % connectionID;
+	return fmt.str();
 }

@@ -127,3 +127,30 @@ struct StartInfo
 
 	}
 };
+
+struct ServerCapabilities
+{
+	bool allowMapUpload;
+	bool allowMapDownload;
+	bool allowMapCreation;
+
+	bool allowModsUpload;
+	bool allowModsDownload;
+
+	bool allowReconnect;
+	bool allowSpectating;
+
+	template <typename Handler>
+	void serialize(Handler & h, const int version)
+	{
+		h & allowMapUpload;
+		h & allowMapDownload;
+		h & allowMapCreation;
+
+		h & allowModsUpload;
+		h & allowModsDownload;
+
+		h & allowReconnect;
+		h & allowSpectating;
+	}
+};
