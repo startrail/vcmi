@@ -22,7 +22,9 @@
 #include "../CMessage.h"
 #include "../CMusicHandler.h"
 #include "../CPlayerInterface.h"
-#include "../CPreGame.h"
+#include "../pregame/CPreGame.h"
+#include "../pregame/CCampaignScreen.h"
+#include "../pregame/CSelectionScreen.h"
 #include "../Graphics.h"
 #include "../mapHandler.h"
 

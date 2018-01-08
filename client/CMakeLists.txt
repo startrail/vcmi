@@ -43,6 +43,14 @@ set(client_SRCS
 		windows/InfoWindows.cpp
 		windows/QuickRecruitmentWindow.cpp
 
+		pregame/CPreGame.cpp
+		pregame/CCampaignScreen.cpp
+		pregame/CSelectionScreen.cpp
+		pregame/OptionsTab.cpp
+		pregame/RandomMapTab.cpp
+		pregame/SelectionTab.cpp
+		pregame/NetPacksPregame.cpp
+
 		CBitmapHandler.cpp
 		CreatureCostBox.cpp
 		CDefHandler.cpp
@@ -52,7 +60,6 @@ set(client_SRCS
 		CMT.cpp
 		CMusicHandler.cpp
 		CPlayerInterface.cpp
-		CPreGame.cpp
 		CVideoHandler.cpp
 		CServerHandler.cpp
 		Graphics.cpp
@@ -102,6 +109,13 @@ set(client_HEADERS
 		windows/InfoWindows.h
 		windows/QuickRecruitmentWindow.h
 
+		pregame/CPreGame.h
+		pregame/CCampaignScreen.h
+		pregame/CSelectionScreen.h
+		pregame/OptionsTab.h
+		pregame/RandomMapTab.h
+		pregame/SelectionTab.h
+
 		CBitmapHandler.h
 		CreatureCostBox.h
 		CDefHandler.h
@@ -111,7 +125,6 @@ set(client_HEADERS
 		CMT.h
 		CMusicHandler.h
 		CPlayerInterface.h
-		CPreGame.h
 		CVideoHandler.h
 		CServerHandler.h
 		Graphics.h

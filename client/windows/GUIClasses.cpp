@@ -21,7 +21,6 @@
 #include "../CMessage.h"
 #include "../CMusicHandler.h"
 #include "../CPlayerInterface.h"
-#include "../CPreGame.h"
 #include "../CVideoHandler.h"
 #include "../Graphics.h"
 #include "../mapHandler.h"
@@ -37,6 +36,8 @@
 #include "../widgets/CComponent.h"
 #include "../widgets/MiscWidgets.h"
 #include "../windows/InfoWindows.h"
+
+#include "../pregame/CSelectionScreen.h"
 
 #include "../../CCallback.h"
 
