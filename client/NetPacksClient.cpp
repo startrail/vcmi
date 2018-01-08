@@ -41,6 +41,7 @@
 #include "widgets/MiscWidgets.h"
 #include "widgets/AdventureMapClasses.h"
 #include "CMT.h"
+#include "CServerHandler.h"
 
 //macros to avoid code duplication - calls given method with given arguments if interface for specific player is present
 //awaiting variadic templates...

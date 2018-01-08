@@ -73,6 +73,4 @@ public:
 };
 extern const CGameInfo* CGI;
 
-//TODO: MOVE LATER
-extern CServerHandler * CSH;
 ////////////// extern CondSh<bool> serverAlive;

@@ -54,6 +54,7 @@ set(client_SRCS
 		CPlayerInterface.cpp
 		CPreGame.cpp
 		CVideoHandler.cpp
+		CServerHandler.cpp
 		Graphics.cpp
 		mapHandler.cpp
 		NetPacksClient.cpp
@@ -112,6 +113,7 @@ set(client_HEADERS
 		CPlayerInterface.h
 		CPreGame.h
 		CVideoHandler.h
+		CServerHandler.h
 		Graphics.h
 		mapHandler.h
 		resource.h

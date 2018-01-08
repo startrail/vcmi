@@ -55,6 +55,7 @@
 #include "../lib/CPlayerState.h"
 #include "gui/CAnimation.h"
 #include "../lib/serializer/Connection.h"
+#include "CServerHandler.h"
 
 #include <boost/asio.hpp>
 
