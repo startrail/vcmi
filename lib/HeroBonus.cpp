@@ -449,10 +449,10 @@ int IBonusBearer::LuckVal() const
 
 si32 IBonusBearer::Attack() const
 {
-	static const std::string cachingStrSkill = "type_PRIMARY_SKILLs_ATTACK";
+	const std::string cachingStrSkill = "type_PRIMARY_SKILLs_ATTACK";
 	static const auto selectorSkill = Selector::typeSubtype(Bonus::PRIMARY_SKILL, PrimarySkill::ATTACK);
 
-	static const std::string cachingStrFrenzy = "type_IN_FRENZY";
+	const std::string cachingStrFrenzy = "type_IN_FRENZY";
 	static const auto selectorFrenzy = Selector::type(Bonus::IN_FRENZY);
 
 	si32 ret = valOfBonuses(selectorSkill, cachingStrSkill);
@@ -468,10 +468,10 @@ si32 IBonusBearer::Attack() const
 
 si32 IBonusBearer::Defense(bool withFrenzy) const
 {
-	static const std::string cachingStrSkill = "type_PRIMARY_SKILLs_DEFENSE";
+	const std::string cachingStrSkill = "type_PRIMARY_SKILLs_DEFENSE";
 	static const auto selectorSkill = Selector::typeSubtype(Bonus::PRIMARY_SKILL, PrimarySkill::DEFENSE);
 
-	static const std::string cachingStrFrenzy = "type_IN_FRENZY";
+	const std::string cachingStrFrenzy = "type_IN_FRENZY";
 	static const auto selectorFrenzy = Selector::type(Bonus::IN_FRENZY);
 
 	si32 ret = valOfBonuses(selectorSkill, cachingStrSkill);
@@ -487,7 +487,7 @@ si32 IBonusBearer::Defense(bool withFrenzy) const
 
 ui32 IBonusBearer::MaxHealth() const
 {
-	static const std::string cachingStr = "type_STACK_HEALTH";
+	const std::string cachingStr = "type_STACK_HEALTH";
 	static const auto selector = Selector::type(Bonus::STACK_HEALTH);
 	auto value = valOfBonuses(selector, cachingStr);
 	return std::max(1, value); //never 0
@@ -505,14 +505,14 @@ int IBonusBearer::getDefence(bool ranged) const
 
 int IBonusBearer::getMinDamage(bool ranged) const
 {
-	static const std::string cachingStr = "type_CREATURE_DAMAGEs_0Otype_CREATURE_DAMAGEs_1";
+	const std::string cachingStr = "type_CREATURE_DAMAGEs_0Otype_CREATURE_DAMAGEs_1";
 	static const auto selector = Selector::typeSubtype(Bonus::CREATURE_DAMAGE, 0).Or(Selector::typeSubtype(Bonus::CREATURE_DAMAGE, 1));
 	return valOfBonuses(selector, cachingStr);
 }
 
 int IBonusBearer::getMaxDamage(bool ranged) const
 {
-	static const std::string cachingStr = "type_CREATURE_DAMAGEs_0Otype_CREATURE_DAMAGEs_2";
+	const std::string cachingStr = "type_CREATURE_DAMAGEs_0Otype_CREATURE_DAMAGEs_2";
 	static const auto selector = Selector::typeSubtype(Bonus::CREATURE_DAMAGE, 0).Or(Selector::typeSubtype(Bonus::CREATURE_DAMAGE, 2));
 	return valOfBonuses(selector, cachingStr);
 }

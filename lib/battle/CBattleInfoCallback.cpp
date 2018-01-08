@@ -163,7 +163,7 @@ bool CBattleInfoCallback::battleHasWallPenalty(const IBonusBearer * shooter, Bat
 	if(!battleGetSiegeLevel())
 		return false;
 
-	static const std::string cachingStrNoWallPenalty = "type_NO_WALL_PENALTY";
+	const std::string cachingStrNoWallPenalty = "type_NO_WALL_PENALTY";
 	static const auto selectorNoWallPenalty = Selector::type(Bonus::NO_WALL_PENALTY);
 
 	if(shooter->hasBonus(selectorNoWallPenalty, cachingStrNoWallPenalty))
@@ -652,7 +652,7 @@ TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) 
 		return unmodifiableTowerDamage;
 	}
 
-	static const std::string cachingStrSiedgeWeapon = "type_SIEGE_WEAPON";
+	const std::string cachingStrSiedgeWeapon = "type_SIEGE_WEAPON";
 	static const auto selectorSiedgeWeapon = Selector::type(Bonus::SIEGE_WEAPON);
 
 	if(attackerBonuses->hasBonus(selectorSiedgeWeapon, cachingStrSiedgeWeapon) && info.attacker->creatureIndex() != CreatureID::ARROW_TOWERS) //any siege weapon, but only ballista can attack (second condition - not arrow turret)
@@ -676,7 +676,7 @@ TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) 
 	double multDefenceReduction = 1.0 - battleBonusValue(attackerBonuses, Selector::type(Bonus::ENEMY_DEFENCE_REDUCTION)) / 100.0;
 	attackDefenceDifference -= info.defender->getDefence(info.shooting) * multDefenceReduction;
 
-	static const std::string cachingStrSlayer = "type_SLAYER";
+	const std::string cachingStrSlayer = "type_SLAYER";
 	static const auto selectorSlayer = Selector::type(Bonus::SLAYER);
 
 	//slayer handling //TODO: apply only ONLY_MELEE_FIGHT / DISTANCE_FIGHT?
@@ -716,10 +716,10 @@ TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) 
 		additiveBonus += inc;
 	}
 
-	static const std::string cachingStrJousting = "type_JOUSTING";
+	const std::string cachingStrJousting = "type_JOUSTING";
 	static const auto selectorJousting = Selector::type(Bonus::JOUSTING);
 
-	static const std::string cachingStrChargeImmunity = "type_CHARGE_IMMUNITY";
+	const std::string cachingStrChargeImmunity = "type_CHARGE_IMMUNITY";
 	static const auto selectorChargeImmunity = Selector::type(Bonus::CHARGE_IMMUNITY);
 
 	//applying jousting bonus
@@ -727,13 +727,13 @@ TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) 
 		additiveBonus += info.chargedFields * 0.05;
 
 	//handling secondary abilities and artifacts giving premies to them
-	static const std::string cachingStrArchery = "type_SECONDARY_SKILL_PREMYs_ARCHERY";
+	const std::string cachingStrArchery = "type_SECONDARY_SKILL_PREMYs_ARCHERY";
 	static const auto selectorArchery = Selector::typeSubtype(Bonus::SECONDARY_SKILL_PREMY, SecondarySkill::ARCHERY);
 
-	static const std::string cachingStrOffence = "type_SECONDARY_SKILL_PREMYs_OFFENCE";
+	const std::string cachingStrOffence = "type_SECONDARY_SKILL_PREMYs_OFFENCE";
 	static const auto selectorOffence = Selector::typeSubtype(Bonus::SECONDARY_SKILL_PREMY, SecondarySkill::OFFENCE);
 
-	static const std::string cachingStrArmorer = "type_SECONDARY_SKILL_PREMYs_ARMORER";
+	const std::string cachingStrArmorer = "type_SECONDARY_SKILL_PREMYs_ARMORER";
 	static const auto selectorArmorer = Selector::typeSubtype(Bonus::SECONDARY_SKILL_PREMY, SecondarySkill::ARMORER);
 
 	if(info.shooting)
@@ -745,17 +745,17 @@ TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) 
 
 	//handling hate effect
 	//assume that unit have only few HATE features and cache them all
-	static const std::string cachingStrHate = "type_HATE";
+	const std::string cachingStrHate = "type_HATE";
 	static const auto selectorHate = Selector::type(Bonus::HATE);
 
 	auto allHateEffects = attackerBonuses->getBonuses(selectorHate, cachingStrHate);
 
 	additiveBonus += allHateEffects->valOfBonuses(Selector::subtype(info.defender->creatureIndex())) / 100.0;
 
-	static const std::string cachingStrMeleeReduction = "type_GENERAL_DAMAGE_REDUCTIONs_0";
+	const std::string cachingStrMeleeReduction = "type_GENERAL_DAMAGE_REDUCTIONs_0";
 	static const auto selectorMeleeReduction = Selector::typeSubtype(Bonus::GENERAL_DAMAGE_REDUCTION, 0);
 
-	static const std::string cachingStrRangedReduction = "type_GENERAL_DAMAGE_REDUCTIONs_1";
+	const std::string cachingStrRangedReduction = "type_GENERAL_DAMAGE_REDUCTIONs_1";
 	static const auto selectorRangedReduction = Selector::typeSubtype(Bonus::GENERAL_DAMAGE_REDUCTION, 1);
 
 	//handling spell effects
@@ -787,10 +787,10 @@ TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) 
 		}
 	}
 
-	static const std::string cachingStrForcedMinDamage = "type_ALWAYS_MINIMUM_DAMAGE";
+	const std::string cachingStrForcedMinDamage = "type_ALWAYS_MINIMUM_DAMAGE";
 	static const auto selectorForcedMinDamage = Selector::type(Bonus::ALWAYS_MINIMUM_DAMAGE);
 
-	static const std::string cachingStrForcedMaxDamage = "type_ALWAYS_MAXIMUM_DAMAGE";
+	const std::string cachingStrForcedMaxDamage = "type_ALWAYS_MAXIMUM_DAMAGE";
 	static const auto selectorForcedMaxDamage = Selector::type(Bonus::ALWAYS_MAXIMUM_DAMAGE);
 
 	TBonusListPtr curseEffects = attackerBonuses->getBonuses(selectorForcedMinDamage, cachingStrForcedMinDamage);
@@ -804,7 +804,7 @@ TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) 
 		multBonus *= 1.0 - curseMultiplicativePenalty/100;
 	}
 
-	static const std::string cachingStrAdvAirShield = "isAdvancedAirShield";
+	const std::string cachingStrAdvAirShield = "isAdvancedAirShield";
 	auto isAdvancedAirShield = [](const Bonus* bonus)
 	{
 		return bonus->source == Bonus::SPELL_EFFECT
@@ -826,7 +826,7 @@ TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) 
 	}
 	else
 	{
-		static const std::string cachingStrNoMeleePenalty = "type_NO_MELEE_PENALTY";
+		const std::string cachingStrNoMeleePenalty = "type_NO_MELEE_PENALTY";
 		static const auto selectorNoMeleePenalty = Selector::type(Bonus::NO_MELEE_PENALTY);
 
 		if(info.attacker->isShooter() && !attackerBonuses->hasBonus(selectorNoMeleePenalty, cachingStrNoMeleePenalty))
@@ -836,7 +836,7 @@ TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) 
 	// psychic elementals versus mind immune units 50%
 	if(info.attacker->creatureIndex() == CreatureID::PSYCHIC_ELEMENTAL)
 	{
-		static const std::string cachingStrMindImmunity = "type_MIND_IMMUNITY";
+		const std::string cachingStrMindImmunity = "type_MIND_IMMUNITY";
 		static const auto selectorMindImmunity = Selector::type(Bonus::MIND_IMMUNITY);
 
 		if(defenderBonuses->hasBonus(selectorMindImmunity, cachingStrMindImmunity))
@@ -1458,7 +1458,7 @@ bool CBattleInfoCallback::battleHasDistancePenalty(const IBonusBearer * shooter,
 {
 	RETURN_IF_NOT_BATTLE(false);
 
-	static const std::string cachingStrNoDistancePenalty = "type_NO_DISTANCE_PENALTY";
+	const std::string cachingStrNoDistancePenalty = "type_NO_DISTANCE_PENALTY";
 	static const auto selectorNoDistancePenalty = Selector::type(Bonus::NO_DISTANCE_PENALTY);
 
 	if(shooter->hasBonus(selectorNoDistancePenalty, cachingStrNoDistancePenalty))

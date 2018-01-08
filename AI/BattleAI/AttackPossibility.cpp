@@ -45,7 +45,7 @@ int64_t AttackPossibility::attackValue() const
 
 AttackPossibility AttackPossibility::evaluate(const BattleAttackInfo & attackInfo, BattleHex hex)
 {
-	static const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
+	const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
 	static const auto selectorBlocksRetaliation = Selector::type(Bonus::BLOCKS_RETALIATION);
 
 	const bool counterAttacksBlocked = attackInfo.attacker->hasBonus(selectorBlocksRetaliation, cachingStringBlocksRetaliation);

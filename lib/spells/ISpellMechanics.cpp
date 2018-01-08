@@ -302,7 +302,7 @@ void BattleCast::cast(const SpellCastEnvironment * env)
 	//Magic Mirror effect
 	if(tryMagicMirror)
 	{
-		static const std::string magicMirrorCacheStr = "type_MAGIC_MIRROR";
+		const std::string magicMirrorCacheStr = "type_MAGIC_MIRROR";
 		static const auto magicMirrorSelector = Selector::type(Bonus::MAGIC_MIRROR);
 
 		auto rangeGen = env->getRandomGenerator().getInt64Range(0, 99);
