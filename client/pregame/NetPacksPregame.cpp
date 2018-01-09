@@ -43,16 +43,19 @@ void QuitMenuWithoutStarting::apply(CSelectionScreen * selScreen)
 
 void PlayerJoined::apply(CSelectionScreen * selScreen)
 {
-	SEL->playerNames[connectionID] = playerName;
+	SEL->playerNames[connectionID] = players;
 
 	//put new player in first slot with AI
-	for(auto & elem : SEL->sInfo.playerInfos)
+	for(auto & player : players)
 	{
-		if(!elem.second.playerID && !elem.second.compOnly)
+		for(auto & elem : SEL->sInfo.playerInfos)
 		{
-			selScreen->setPlayer(elem.second, connectionID);
-			selScreen->opt->entries[elem.second.color]->selectButtons();
-			break;
+			if(!elem.second.playerID && !elem.second.compOnly)
+			{
+				selScreen->setPlayer(elem.second, player.first);
+				selScreen->opt->entries[elem.second.color]->selectButtons();
+				break;
+			}
 		}
 	}
 

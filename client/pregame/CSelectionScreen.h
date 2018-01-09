@@ -22,6 +22,8 @@ class SelectionTab;
 class InfoCard;
 class CChatBox;
 
+struct ClientPlayer;
+
 /// Interface for selecting a map.
 class ISelectionScreenInfo
 {
@@ -30,7 +32,7 @@ public:
 	CMenuScreen::EState screenType; //new/save/load#Game
 	const CMapInfo * current;
 	StartInfo sInfo;
-	std::map<ui8, std::string> playerNames; // id of player <-> player name; 0 is reserved as ID of AI "players"
+	std::map<ui8, std::map<std::string, ClientPlayer>> playerNames; // id of player <-> player name; 0 is reserved as ID of AI "players"
 
 	ISelectionScreenInfo();
 	virtual ~ISelectionScreenInfo();

@@ -254,15 +254,18 @@ void CVCMIServer::handleConnection(CConnection * cpc)
 				for(auto & name : cpc->names)
 					logNetwork->info("Client %d player: %s", cpc->connectionID, name);
 
+				auto pj = new PlayerJoined();
+				pj->connectionID = cpc->connectionID;
 				for(auto & name : cpc->names)
 				{
 					announceTxt(boost::str(boost::format("%s(%d) joins the game") % name % cpc->connectionID));
 
-					auto pj = new PlayerJoined();
-					pj->playerName = name;
-					pj->connectionID = cpc->connectionID;
-					toAnnounce.push_back(pj);
+					ClientPlayer cp;
+					cp.name = name;
+					cp.color = PlayerColor::CANNOT_DETERMINE;
+					pj->players.insert(std::make_pair(boost::uuids::to_string(boost::uuids::random_generator()()), cp));
 				}
+				toAnnounce.push_back(pj);
 			}
 
 			bool quitting = dynamic_ptr_cast<QuitMenuWithoutStarting>(cpfs),

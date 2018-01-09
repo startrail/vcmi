@@ -2429,16 +2429,28 @@ struct QuitMenuWithoutStarting : public CPregamePackToPropagate
 	{}
 };
 
+struct ClientPlayer // MPTODO
+{
+	std::string name;
+	ui8 color;
+
+	template <typename Handler> void serialize(Handler &h, const int version)
+	{
+		h & name;
+		h & color;
+	}
+};
+
 struct PlayerJoined : public CPregamePackToHost
 {
-	std::string playerName;
+	std::map<std::string, ClientPlayer> players;
 	ui8 connectionID;
 
 	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & playerName;
+		h & players;
 		h & connectionID;
 	}
 };
