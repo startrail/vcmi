@@ -191,15 +191,11 @@ void CServerHandler::justConnectToServer(const std::string &host, const ui16 por
 	}
 }
 
-void CServerHandler::welcomeServer(std::map<ui8, std::string> & playerNames)
+void CServerHandler::welcomeServer()
 {
 	c->enterPregameConnectionMode();
 
-	std::vector<std::string> names;
-	for(auto name : playerNames)
-		names.push_back(name.second);
-
-	WelcomeServer ws(uuid, names);
+	WelcomeServer ws(uuid, myNames);
 	*c << &ws;
 }
 

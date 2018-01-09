@@ -32,7 +32,7 @@ public:
 	StartInfo sInfo;
 	std::map<ui8, std::string> playerNames; // id of player <-> player name; 0 is reserved as ID of AI "players"
 
-	ISelectionScreenInfo(const std::map<ui8, std::string> * Names = nullptr);
+	ISelectionScreenInfo();
 	virtual ~ISelectionScreenInfo();
 	virtual void update(){};
 	virtual void propagateOptions() {};
@@ -70,7 +70,7 @@ public:
 	bool ongoingClosing;
 	ui8 myNameID; //used when networking - otherwise all player are "mine"
 
-	CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode = CMenuScreen::MULTI_NETWORK_HOST, const std::map<ui8, std::string> * Names = nullptr);
+	CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode = CMenuScreen::MULTI_NETWORK_HOST);
 	~CSelectionScreen();
 	void showAll(SDL_Surface * to) override;
 	void toggleTab(CIntObject * tab);

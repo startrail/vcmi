@@ -33,6 +33,8 @@ public:
 
 	static CondSh<bool> serverAlive;  //used to prevent game start from executing if server is already running
 
+	std::vector<std::string> myNames;
+
 	//functions setting up local server
 	void startServer(); //creates a thread with callServer
 	void waitForServer(); //waits till server is ready
@@ -47,7 +49,7 @@ public:
 	CServerHandler();
 	virtual ~CServerHandler();
 
-	void welcomeServer(std::map<ui8, std::string> & playerNames);
+	void welcomeServer();
 	void stopConnection();
 };
 

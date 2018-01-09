@@ -318,9 +318,15 @@ void CGPreGame::update()
 		GH.topInt()->show(screen);
 }
 
-void CGPreGame::openSel(CMenuScreen::EState screenType, CMenuScreen::EGameMode gameMode, const std::map<ui8, std::string> * Names)
+void CGPreGame::openSel(CMenuScreen::EState screenType, CMenuScreen::EGameMode gameMode, const std::vector<std::string> * names)
 {
-	GH.pushInt(new CSelectionScreen(screenType, gameMode, Names));
+	GH.pushInt(new CSelectionScreen(screenType, gameMode));
+
+	CSH->myNames.clear();
+	if(names && !names->empty()) //if have custom set of player names - use it
+		CSH->myNames = *names;
+	else
+		CSH->myNames.push_back(settings["general"]["playerName"].String());
 
 	if(gameMode == CMenuScreen::MULTI_NETWORK_HOST && !settings["session"]["donotstartserver"].Bool())
 		CSH->startServerAndConnect();
@@ -530,13 +536,13 @@ void CMultiPlayers::onChange(std::string newText)
 
 void CMultiPlayers::enterSelectionScreen()
 {
-	std::map<ui8, std::string> names;
-	for(int i = 0, j = 1; i < ARRAY_COUNT(txt); i++)
+	std::vector<std::string> names;
+	for(int i = 0; i < ARRAY_COUNT(txt); i++)
 		if(txt[i]->text.length())
-			names[j++] = txt[i]->text;
+			names.push_back(txt[i]->text);
 
 	Settings name = settings.write["general"]["playerName"];
-	name->String() = names.begin()->second;
+	name->String() = names[0];
 
 	GH.popInts(2); //pop MP mode window and this
 

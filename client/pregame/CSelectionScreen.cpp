@@ -93,18 +93,13 @@ public:
 static CApplier<CBaseForPGApply> * applier = nullptr;
 
 
-ISelectionScreenInfo::ISelectionScreenInfo(const std::map<ui8, std::string> * Names)
+ISelectionScreenInfo::ISelectionScreenInfo()
 {
 	gameMode = CMenuScreen::MULTI_NETWORK_HOST;
 	screenType = CMenuScreen::mainMenu;
 	assert(!SEL);
 	SEL = this;
 	current = nullptr;
-
-	if(Names && !Names->empty()) //if have custom set of player names - use it
-		playerNames = *Names;
-	else
-		playerNames[1] = settings["general"]["playerName"].String(); //by default we have only one player and his name is "Player" (or whatever the last used name was)
 }
 
 ISelectionScreenInfo::~ISelectionScreenInfo()
@@ -153,8 +148,8 @@ bool ISelectionScreenInfo::isHost() const
  * passed separately to CSaveGameScreen.
  */
 
-CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode, const std::map<ui8, std::string> * Names)
-	: ISelectionScreenInfo(Names), serverHandlingThread(nullptr), mx(new boost::recursive_mutex), ongoingClosing(false), myNameID(255)
+CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode)
+	: ISelectionScreenInfo(), serverHandlingThread(nullptr), mx(new boost::recursive_mutex), ongoingClosing(false), myNameID(255)
 {
 	CGPreGame::create(); //we depend on its graphics
 	screenType = Type;
@@ -516,7 +511,7 @@ void CSelectionScreen::handleConnection()
 
 	applier = new CApplier<CBaseForPGApply>();
 	registerTypesPregamePacks(*applier);
-	CSH->welcomeServer(playerNames);
+	CSH->welcomeServer();
 
 	if(isHost())
 	{

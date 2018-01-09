@@ -148,7 +148,7 @@ public:
 
 	~CGPreGame();
 	void update() override;
-	static void openSel(CMenuScreen::EState type, CMenuScreen::EGameMode gameMode = CMenuScreen::MULTI_NETWORK_HOST, const std::map<ui8, std::string> * Names = nullptr);
+	static void openSel(CMenuScreen::EState type, CMenuScreen::EGameMode gameMode = CMenuScreen::MULTI_NETWORK_HOST, const std::vector<std::string> * names = nullptr);
 
 	void openCampaignScreen(std::string name);
 
