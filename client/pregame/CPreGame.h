@@ -35,6 +35,7 @@ class CAnimImage;
 class CButton;
 class CLabel;
 class CSlider;
+struct ClientPlayer;
 
 namespace boost{ class thread; class recursive_mutex;}
 
@@ -158,8 +159,8 @@ public:
 
 	//MPTODO mess
 	static CPicture * createPicture(const JsonNode & config);
-	static void setPlayer(PlayerSettings & pset, ui8 player, const std::map<ui8, std::string> & playerNames);
-	static void updateStartInfo(std::string filename, StartInfo & sInfo, const std::unique_ptr<CMapHeader> & mapHeader, const std::map<ui8, std::string> & playerNames);
+	static void setPlayer(PlayerSettings & pset, ui8 player, const std::map<ui8, ClientPlayer> & playerNames);
+	static void updateStartInfo(std::string filename, StartInfo & sInfo, const std::unique_ptr<CMapHeader> & mapHeader, const std::map<ui8, ClientPlayer> & playerNames);
 	static PlayerColor playerColor;
 	static std::string saveGameName;
 };

@@ -43,11 +43,11 @@ void QuitMenuWithoutStarting::apply(CSelectionScreen * selScreen)
 
 void PlayerJoined::apply(CSelectionScreen * selScreen)
 {
-	SEL->playerNames[connectionID] = players;
-
-	//put new player in first slot with AI
 	for(auto & player : players)
 	{
+		SEL->playerNames.insert(player);
+
+		//put new player in first slot with AI
 		for(auto & elem : SEL->sInfo.playerInfos)
 		{
 			if(!elem.second.playerID && !elem.second.compOnly)
@@ -131,12 +131,18 @@ void PlayerLeft::apply(CSelectionScreen * selScreen)
 	if(selScreen->isGuest())
 		return;
 
-	SEL->playerNames.erase(playerID);
-
-	if(PlayerSettings * s = selScreen->sInfo.getPlayersSettings(playerID)) //it's possible that player was unallocated
+	for(auto & pair : selScreen->playerNames)
 	{
-		selScreen->setPlayer(*s, 0);
-		selScreen->opt->entries[s->color]->selectButtons();
+		if(pair.second.connection != connectionID)
+			continue;
+
+		selScreen->playerNames.erase(pair.first);
+
+		if(PlayerSettings * s = selScreen->sInfo.getPlayersSettings(pair.first)) //it's possible that player was unallocated
+		{
+			selScreen->setPlayer(*s, 0);
+			selScreen->opt->entries[s->color]->selectButtons();
+		}
 	}
 
 	selScreen->propagateNames();

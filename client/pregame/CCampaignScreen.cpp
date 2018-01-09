@@ -717,7 +717,7 @@ void CBonusSelection::selectMap(int mapNr, bool initialSelect)
 
 		std::map<ui8, std::string> names;
 		names[1] = settings["general"]["playerName"].String();
-		CGPreGame::updateStartInfo(ourCampaign->camp->header.filename, startInfo, ourHeader, names);
+//MPTODO		CGPreGame::updateStartInfo(ourCampaign->camp->header.filename, startInfo, ourHeader, names);
 
 		mapDescription->setText(ourHeader->description);
 
@@ -747,10 +747,10 @@ void CBonusSelection::selectBonus(int id)
 		names[1] = settings["general"]["playerName"].String();
 		for(auto & elem : startInfo.playerInfos)
 		{
-			if(elem.first == PlayerColor(bonDescs[id].info1))
-				CGPreGame::setPlayer(elem.second, 1, names);
-			else
-				CGPreGame::setPlayer(elem.second, 0, names);
+//			if(elem.first == PlayerColor(bonDescs[id].info1))
+//MPTODO				CGPreGame::setPlayer(elem.second, 1, names);
+//			else
+//MPTODO				CGPreGame::setPlayer(elem.second, 0, names);
 		}
 	}
 }

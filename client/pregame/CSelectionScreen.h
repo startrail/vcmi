@@ -32,13 +32,17 @@ public:
 	CMenuScreen::EState screenType; //new/save/load#Game
 	const CMapInfo * current;
 	StartInfo sInfo;
-	std::map<ui8, std::map<std::string, ClientPlayer>> playerNames; // id of player <-> player name; 0 is reserved as ID of AI "players"
+	std::map<ui8, ClientPlayer> playerNames; // id of player <-> player name; 0 is reserved as ID of AI "players"
 
+	bool isMyColor(PlayerColor color);
+	ui8 myFirstId();
+	bool isMyId(ui8 id);
+	std::vector<ui8> getMyIds();
 	ISelectionScreenInfo();
 	virtual ~ISelectionScreenInfo();
 	virtual void update(){};
 	virtual void propagateOptions() {};
-	virtual void postRequest(ui8 what, ui8 dir) {};
+	virtual void postRequest(ui8 what, ui8 dir, PlayerColor player) {};
 	virtual void postChatMessage(const std::string & txt){};
 
 	void setPlayer(PlayerSettings & pset, ui8 player);
@@ -70,7 +74,6 @@ public:
 	std::list<CPackForSelectionScreen *> upcomingPacks; //protected by mx
 
 	bool ongoingClosing;
-	ui8 myNameID; //used when networking - otherwise all player are "mine"
 
 	CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode = CMenuScreen::MULTI_NETWORK_HOST);
 	~CSelectionScreen();
@@ -88,7 +91,7 @@ public:
 	void setSInfo(const StartInfo & si);
 	void propagateNames();
 	void propagateOptions() override;
-	void postRequest(ui8 what, ui8 dir) override;
+	void postRequest(ui8 what, ui8 dir, PlayerColor player) override;
 	void postChatMessage(const std::string & txt) override;
 };
 

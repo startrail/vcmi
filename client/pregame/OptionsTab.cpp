@@ -94,7 +94,7 @@ void OptionsTab::nextCastle(PlayerColor player, int dir)
 {
 	if(SEL->isGuest())
 	{
-		SEL->postRequest(RequestOptionsChange::TOWN, dir);
+		SEL->postRequest(RequestOptionsChange::TOWN, dir, player);
 		return;
 	}
 
@@ -158,7 +158,7 @@ void OptionsTab::nextHero(PlayerColor player, int dir)
 {
 	if(SEL->isGuest())
 	{
-		SEL->postRequest(RequestOptionsChange::HERO, dir);
+		SEL->postRequest(RequestOptionsChange::HERO, dir, player);
 		return;
 	}
 
@@ -212,7 +212,7 @@ void OptionsTab::nextBonus(PlayerColor player, int dir)
 {
 	if(SEL->isGuest())
 	{
-		SEL->postRequest(RequestOptionsChange::BONUS, dir);
+		SEL->postRequest(RequestOptionsChange::BONUS, dir, player);
 		return;
 	}
 
@@ -261,7 +261,7 @@ void OptionsTab::flagPressed(PlayerColor color)
 	PlayerSettings & clicked = SEL->sInfo.playerInfos[color];
 	PlayerSettings * old = nullptr;
 
-	if(SEL->playerNames.size() == 1) //single player -> just swap
+/*	if(SEL->playerNames.size() == 1) //single player -> just swap
 	{
 		if(color == CGPreGame::playerColor) //that color is already selected, no action needed
 			return;
@@ -269,7 +269,7 @@ void OptionsTab::flagPressed(PlayerColor color)
 		old = &SEL->sInfo.playerInfos[CGPreGame::playerColor];
 		swapPlayers(*old, clicked);
 	}
-	else
+	else*/
 	{
 		//identify clicked player
 		int clickedNameID = clicked.playerID; //human is a number of player, zero means AI
@@ -794,7 +794,7 @@ void OptionsTab::PlayerOptionsEntry::selectButtons()
 	if(!btns[0])
 		return;
 
-	const bool foreignPlayer = SEL->isGuest() && s.color != CGPreGame::playerColor;
+	const bool foreignPlayer = SEL->isGuest() && !SEL->isMyColor(s.color);
 
 	if((pi.allowedFactions.size() < 2 && !pi.isFactionRandom) || foreignPlayer)
 	{

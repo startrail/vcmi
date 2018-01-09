@@ -419,12 +419,14 @@ void CClient::newGame(StartInfo *si)
 	std::set<PlayerColor> myPlayers;
 	for(auto & elem : gs->scenarioOps->playerInfos)
 	{
-		if((networkMode != SINGLE && CSH->c->connectionID == elem.second.playerID)      //multi - client has only "its players"
+		if((networkMode != SINGLE && vstd::contains(CSH->myPlayers, elem.second.playerID))      //multi - client has only "its players"
 		   || (networkMode == HOST && elem.second.playerID == PlayerSettings::PLAYER_AI))//multi - host has all AI players
 		{
 			myPlayers.insert(elem.first); //add player
+			logGlobal->warn("MY player %d", elem.first);
 		}
 	}
+	logGlobal->warn("MY connectionId %d", CSH->c->connectionID);
 	if(networkMode != GUEST)
 		myPlayers.insert(PlayerColor::NEUTRAL);
 

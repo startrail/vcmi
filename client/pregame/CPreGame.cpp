@@ -395,10 +395,10 @@ PlayerColor CGPreGame::playerColor = PlayerColor::CANNOT_DETERMINE; //if more th
 std::string CGPreGame::saveGameName = "";
 
 
-void CGPreGame::setPlayer(PlayerSettings & pset, ui8 player, const std::map<ui8, std::string> & playerNames)
+void CGPreGame::setPlayer(PlayerSettings & pset, ui8 player, const std::map<ui8, ClientPlayer> & playerNames)
 {
 	if(vstd::contains(playerNames, player))
-		pset.name = playerNames.find(player)->second;
+		pset.name = playerNames.find(player)->second.name;
 	else
 		pset.name = CGI->generaltexth->allTexts[468]; //Computer
 
@@ -407,7 +407,7 @@ void CGPreGame::setPlayer(PlayerSettings & pset, ui8 player, const std::map<ui8,
 		CGPreGame::playerColor = pset.color;
 }
 
-void CGPreGame::updateStartInfo(std::string filename, StartInfo & sInfo, const std::unique_ptr<CMapHeader> & mapHeader, const std::map<ui8, std::string> & playerNames)
+void CGPreGame::updateStartInfo(std::string filename, StartInfo & sInfo, const std::unique_ptr<CMapHeader> & mapHeader, const std::map<ui8, ClientPlayer> & playerNames)
 {
 	sInfo.playerInfos.clear();
 	if(!mapHeader.get())

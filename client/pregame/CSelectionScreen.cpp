@@ -92,6 +92,55 @@ public:
 
 static CApplier<CBaseForPGApply> * applier = nullptr;
 
+bool ISelectionScreenInfo::isMyColor(PlayerColor color)
+{
+	if(playerNames[sInfo.playerInfos[color].playerID].connection == CSH->c->connectionID)
+		return true;
+
+	return false;
+}
+
+ui8 ISelectionScreenInfo::myFirstId()
+{
+	for(auto & pair : playerNames)
+	{
+		if(pair.second.connection == CSH->c->connectionID)
+			return pair.first;
+	}
+
+	return 0;
+}
+
+bool ISelectionScreenInfo::isMyId(ui8 id)
+{
+	for(auto & pair : playerNames)
+	{
+		if(pair.second.connection == CSH->c->connectionID && pair.second.color == id)
+			return true;
+	}
+	return false;
+}
+std::vector<ui8> ISelectionScreenInfo::getMyIds()
+{
+	std::vector<ui8> ids;
+
+	for(auto & pair : playerNames)
+	{
+		if(pair.second.connection == CSH->c->connectionID)
+		{
+			for(auto & elem : sInfo.playerInfos)
+			{
+				if(elem.second.playerID == pair.first)
+				{
+					logGlobal->warn("SEL: MY player %d", elem.second.playerID);
+					ids.push_back(elem.second.playerID);
+				}
+			}
+		}
+	}
+
+	return ids;
+}
 
 ISelectionScreenInfo::ISelectionScreenInfo()
 {
@@ -149,7 +198,7 @@ bool ISelectionScreenInfo::isHost() const
  */
 
 CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameMode GameMode)
-	: ISelectionScreenInfo(), serverHandlingThread(nullptr), mx(new boost::recursive_mutex), ongoingClosing(false), myNameID(255)
+	: ISelectionScreenInfo(), serverHandlingThread(nullptr), mx(new boost::recursive_mutex), ongoingClosing(false)
 {
 	CGPreGame::create(); //we depend on its graphics
 	screenType = Type;
@@ -248,6 +297,7 @@ CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameM
 		break;
 	}
 	case CMenuScreen::loadGame:
+	{
 		////////FIXME
 		////////FIXME
 		CButton * opts2 = new CButton(Point(411, 510), "GSPBUTT.DEF", CGI->generaltexth->zelp[46], std::bind(&CSelectionScreen::toggleTab, this, opt), SDLK_a);
@@ -268,15 +318,15 @@ CSelectionScreen::CSelectionScreen(CMenuScreen::EState Type, CMenuScreen::EGameM
 			opts->addTextOverlay(CGI->generaltexth->allTexts[501], FONT_SMALL, overlayColor);
 		}
 		break;
-/*	case CMenuScreen::saveGame:
-                sel->recActions = 255;
-                start  = new CButton(Point(411, 535), "SCNRSAV.DEF", CGI->generaltexth->zelp[103], std::bind(&CSelectionScreen::startScenario, this), SDLK_s);
-                break;
-        case CMenuScreen::campaignList:
-                sel->recActions = 255;
-                start  = new CButton(Point(411, 535), "SCNRLOD.DEF", CButton::tooltip(), std::bind(&CSelectionScreen::startCampaign, this), SDLK_b);
-                break;
-                */
+	}
+	case CMenuScreen::saveGame:
+		sel->recActions = 255;
+		start  = new CButton(Point(411, 535), "SCNRSAV.DEF", CGI->generaltexth->zelp[103], std::bind(&CSelectionScreen::startScenario, this), SDLK_s);
+		break;
+	case CMenuScreen::campaignList:
+		sel->recActions = 255;
+		start  = new CButton(Point(411, 535), "SCNRLOD.DEF", CButton::tooltip(), std::bind(&CSelectionScreen::startCampaign, this), SDLK_b);
+		break;
 	}
 
 	start->assignedKeys.insert(SDLK_RETURN);
@@ -467,9 +517,10 @@ void CSelectionScreen::startScenario()
 		{
 			CGPreGame::saveGameName = sInfo.mapname;
 		}
-
+		CSH->myPlayers = getMyIds();
 		auto si = new StartInfo(sInfo);
 		CGP->removeFromGui();
+
 		CGP->showLoadingScreen(std::bind(&startGame, si));
 	}
 	else
@@ -586,7 +637,7 @@ void CSelectionScreen::setSInfo(const StartInfo & si)
 	std::map<PlayerColor, PlayerSettings>::const_iterator i;
 	for(i = si.playerInfos.cbegin(); i != si.playerInfos.cend(); i++)
 	{
-		if(i->second.playerID == myNameID)
+		if(isMyId(i->second.playerID))
 		{
 			CGPreGame::playerColor = i->first;
 			break;
@@ -624,12 +675,12 @@ void CSelectionScreen::propagateOptions()
 	}
 }
 
-void CSelectionScreen::postRequest(ui8 what, ui8 dir)
+void CSelectionScreen::postRequest(ui8 what, ui8 dir, PlayerColor player)
 {
 	if(!isGuest() || !CSH->c)
 		return;
 
-	RequestOptionsChange roc(what, dir, myNameID);
+	RequestOptionsChange roc(what, dir, sInfo.playerInfos[player].playerID);
 	*CSH->c << &roc;
 }
 
@@ -638,7 +689,7 @@ void CSelectionScreen::postChatMessage(const std::string & txt)
 	assert(CSH->c);
 	ChatMessage cm;
 	cm.message = txt;
-	cm.playerName = sInfo.getPlayersSettings(myNameID)->name;
+	cm.playerName = playerNames[myFirstId()].name;
 	*CSH->c << &cm;
 }
 
@@ -741,8 +792,8 @@ void InfoCard::showAll(SDL_Surface * to)
 		}
 		else //players list
 		{
-			std::map<ui8, std::string> playerNames = SEL->playerNames;
-			int playerSoFar = 0;
+			auto playerNames = SEL->playerNames;
+			int playerSoFar = 0;//MPTODO
 			for(auto i = SEL->sInfo.playerInfos.cbegin(); i != SEL->sInfo.playerInfos.cend(); i++)
 			{
 				if(i->second.playerID != PlayerSettings::PLAYER_AI)
@@ -755,7 +806,7 @@ void InfoCard::showAll(SDL_Surface * to)
 			playerSoFar = 0;
 			for(auto i = playerNames.cbegin(); i != playerNames.cend(); i++)
 			{
-				printAtLoc(i->second, 193, 285 + playerSoFar++ *graphics->fonts[FONT_SMALL]->getLineHeight(), FONT_SMALL, Colors::WHITE, to);
+				printAtLoc(i->second.name, 193, 285 + playerSoFar++ *graphics->fonts[FONT_SMALL]->getLineHeight(), FONT_SMALL, Colors::WHITE, to);
 			}
 
 		}

@@ -52,7 +52,7 @@ std::string NAME_AFFIX = "server";
 std::string NAME = GameConstants::VCMI_VERSION + std::string(" (") + NAME_AFFIX + ')';
 
 CVCMIServer::CVCMIServer(boost::program_options::variables_map & opts)
-	: port(3030), io(new boost::asio::io_service()), shm(nullptr), listeningThreads(0), upcomingConnection(nullptr), curmap(nullptr), curStartInfo(nullptr), state(RUNNING), cmdLineOptions(opts)
+	: port(3030), io(new boost::asio::io_service()), shm(nullptr), listeningThreads(0), upcomingConnection(nullptr), curmap(nullptr), curStartInfo(nullptr), state(RUNNING), cmdLineOptions(opts), currentPlayerId(1)
 {
 	logNetwork->trace("CVCMIServer created!");
 	if(cmdLineOptions.count("port"))
@@ -247,8 +247,10 @@ void CVCMIServer::handleConnection(CConnection * cpc)
 				cpc->names = ws->names;
 				cpc->uuid = ws->uuid;
 
-				auto wc = new WelcomeClient(*capabilities, cpc->connectionID);
-				toAnnounce.push_back(wc);
+				WelcomeClient wc;
+				wc.connectionId = cpc->connectionID;
+				wc.capabilities = capabilities;
+				*cpc << &wc;
 
 				logNetwork->info("Connection with client %d established. UUID: %s", cpc->connectionID, cpc->uuid);
 				for(auto & name : cpc->names)
@@ -261,9 +263,10 @@ void CVCMIServer::handleConnection(CConnection * cpc)
 					announceTxt(boost::str(boost::format("%s(%d) joins the game") % name % cpc->connectionID));
 
 					ClientPlayer cp;
+					cp.connection = cpc->connectionID;
 					cp.name = name;
-					cp.color = PlayerColor::CANNOT_DETERMINE;
-					pj->players.insert(std::make_pair(boost::uuids::to_string(boost::uuids::random_generator()()), cp));
+					cp.color = 255;
+					pj->players.insert(std::make_pair(currentPlayerId++, cp));
 				}
 				toAnnounce.push_back(pj);
 			}
@@ -308,7 +311,7 @@ void CVCMIServer::handleConnection(CConnection * cpc)
 
 		//notify other players about leaving
 		auto pl = new PlayerLeft();
-		pl->playerID = cpc->connectionID;
+		pl->connectionID = cpc->connectionID;
 
 		for(auto & name : cpc->names)
 			announceTxt(boost::str(boost::format("%s(%d) left the game") % name % cpc->connectionID));

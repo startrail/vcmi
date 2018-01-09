@@ -2431,19 +2431,21 @@ struct QuitMenuWithoutStarting : public CPregamePackToPropagate
 
 struct ClientPlayer // MPTODO
 {
-	std::string name;
+	int connection;
 	ui8 color;
+	std::string name;
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & name;
+		h & connection;
 		h & color;
+		h & name;
 	}
 };
 
 struct PlayerJoined : public CPregamePackToHost
 {
-	std::map<std::string, ClientPlayer> players;
+	std::map<ui8, ClientPlayer> players;
 	ui8 connectionID;
 
 	void apply(CSelectionScreen *selScreen);
@@ -2530,19 +2532,19 @@ struct RequestOptionsChange : public CPregamePackToHost
 
 struct PlayerLeft : public CPregamePackToPropagate
 {
-	ui8 playerID;
+	ui8 connectionID;
 
 	void apply(CSelectionScreen *selScreen);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & playerID;
+		h & connectionID;
 	}
 };
 
 struct PlayersNames : public CPregamePackToPropagate
 {
-	std::map<ui8, std::string> playerNames;
+	std::map<ui8, ClientPlayer> playerNames;
 
 	void apply(CSelectionScreen *selScreen);
 
@@ -2566,7 +2568,6 @@ struct WelcomeClient : public CPregamePackToPropagate
 {
 	int connectionId;
 	ServerCapabilities * capabilities;
-	const CMapInfo * curmap;
 
 	DLL_LINKAGE WelcomeClient(){};
 	DLL_LINKAGE WelcomeClient(ServerCapabilities & cap, int id);
@@ -2577,7 +2578,6 @@ struct WelcomeClient : public CPregamePackToPropagate
 	{
 		h & connectionId;
 		h & capabilities;
-//		h & curmap;
 	}
 };
 
