@@ -176,7 +176,7 @@
 						"defender" :{
 							"shape" : [[""], ["TL"], ["TL", "TR"]],
 							"animation" : "C15SPE7",
-							"appearAnimation" : "C15SPE6
+							"appearAnimation" : "C15SPE6"
 						}
 					}
 				}
@@ -320,7 +320,7 @@
 				"targetModifier":{"smart":false},
 				"battleEffects":{
 					"dispel":{
-						"optional":true,
+						"optional":true
 					},
 					"removeObstacle":{
 						"optional":true,
