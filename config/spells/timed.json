@@ -108,11 +108,24 @@
 					"spellDamageReduction" : {
 						"type" : "SPELL_DAMAGE_REDUCTION",
 						"subtype" : 0,
-						"duration" : "N_TURNS"
+						"duration" : "N_TURNS",
+						"val" : 30
+					}
+				}
+			},
+			"advanced" : {
+				"effects" : {
+					"spellDamageReduction" : {
+						"val" : 50
 					}
 				}
 			},
 			"expert":{
+				"effects" : {
+					"spellDamageReduction" : {
+						"val" : 50
+					}
+				},
 				"range" : "X"
 			}
 		},
@@ -138,11 +151,24 @@
 					"spellDamageReduction" : {
 						"type" : "SPELL_DAMAGE_REDUCTION",
 						"subtype" : 1,
-						"duration" : "N_TURNS"
+						"duration" : "N_TURNS",
+						"val" : 30
+					}
+				}
+			},
+			"advanced" : {
+				"effects" : {
+					"spellDamageReduction" : {
+						"val" : 50
 					}
 				}
 			},
 			"expert":{
+				"effects" : {
+					"spellDamageReduction" : {
+						"val" : 50
+					}
+				},
 				"range" : "X"
 			}
 		},
@@ -168,11 +194,24 @@
 					"spellDamageReduction" : {
 						"type" : "SPELL_DAMAGE_REDUCTION",
 						"subtype" : 2,
-						"duration" : "N_TURNS"
+						"duration" : "N_TURNS",
+						"val" : 30
+					}
+				}
+			},
+			"advanced" : {
+				"effects" : {
+					"spellDamageReduction" : {
+						"val" : 50
 					}
 				}
 			},
 			"expert":{
+				"effects" : {
+					"spellDamageReduction" : {
+						"val" : 50
+					}
+				},
 				"range" : "X"
 			}
 		},
@@ -198,11 +237,24 @@
 					"spellDamageReduction" : {
 						"type" : "SPELL_DAMAGE_REDUCTION",
 						"subtype" : 3,
-						"duration" : "N_TURNS"
+						"duration" : "N_TURNS",
+						"val" : 30
+					}
+				}
+			},
+			"advanced" : {
+				"effects" : {
+					"spellDamageReduction" : {
+						"val" : 50
 					}
 				}
 			},
 			"expert":{
+				"effects" : {
+					"spellDamageReduction" : {
+						"val" : 50
+					}
+				},
 				"range" : "X"
 			}
 		},

@@ -109,7 +109,7 @@ public:
 };
 
 /// internal type to handle loading of one data type (e.g. artifacts, creatures)
-class ContentTypeHandler
+class DLL_LINKAGE ContentTypeHandler
 {
 public:
 	struct ModInfo
@@ -138,7 +138,7 @@ public:
 };
 
 /// class used to load all game data into handlers. Used only during loading
-class CContentHandler
+class DLL_LINKAGE CContentHandler
 {
 	/// preloads all data from fileList as data from modName.
 	bool preloadModData(std::string modName, JsonNode modConfig, bool validate);
